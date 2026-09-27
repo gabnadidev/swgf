@@ -3,6 +3,8 @@ from django.utils import timezone
 from .models import Cliente, Senha, Ticket
 from .forms import RetirarSenhaForm
 from django.contrib.auth.decorators import login_required
+from .models import Cliente, Senha, Ticket, SessaoMesa, Mesa
+
 
 
 def home(request):
@@ -59,14 +61,50 @@ def senha_emitida(request, ticket_id):
 
 @login_required
 def fila(request):
-    """
-    Painel do atendente: mostra as senhas aguardando e as já atendidas.
-    """
     senhas_aguardando = Senha.objects.filter(status='aguardando').order_by('id')
-    senhas_atendidas = Senha.objects.filter(status='atendida').order_by('-id')[:10]
+    senhas_atendidas = Senha.objects.filter(status__in=['chamada', 'atendida']).order_by('-id')[:10]
 
     context = {
         'senhas_aguardando': senhas_aguardando,
         'senhas_atendidas': senhas_atendidas,
     }
     return render(request, 'swgfApp/fila.html', context)
+
+
+@login_required
+def chamar_senha(request):
+    """
+    Chama a próxima senha da fila (a mais antiga com status 'aguardando').
+    Cria uma SessaoMesa se o atendente ainda não tiver uma ativa.
+    """
+    # 1. Pega a próxima senha da fila
+    proxima_senha = Senha.objects.filter(status='aguardando').order_by('id').first()
+
+    if not proxima_senha:
+        # Se não houver senha, volta para a fila com uma mensagem
+        return redirect('swgfApp:fila')
+
+    # 2. Verifica se o atendente tem uma sessão de mesa ativa
+    sessao = SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).first()
+
+    if not sessao:
+        # Se não tiver, cria uma para a Mesa 1 (temporário)
+        mesa = Mesa.objects.first()
+        if not mesa:
+            # Se não existir nenhuma mesa, cria a Mesa 1
+            mesa = Mesa.objects.create(numero=1, status='disponivel')
+        sessao = SessaoMesa.objects.create(usuario=request.user, mesa=mesa)
+
+    # 3. Atualiza o status da senha
+    proxima_senha.status = 'chamada'
+    proxima_senha.save()
+
+    # 4. Atualiza o ticket correspondente
+    ticket = Ticket.objects.filter(senha=proxima_senha).first()
+    if ticket:
+        ticket.hora_atendimento = timezone.now().time()
+        ticket.sessao_mesa = sessao
+        ticket.save()
+
+    # 5. Redireciona de volta para a fila
+    return redirect('swgfApp:fila')

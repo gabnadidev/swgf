@@ -49,6 +49,23 @@
             text-decoration: none;
             font-weight: bold;
         }
+
+        .btn-chamar {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #ccc;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-chamar:hover {
+            background: #aaa;
+        }
     </style>
 </head>
 
@@ -87,6 +104,11 @@
             </ul>
         </div>
     </div>
+
+    <form method="post" action="{% url 'swgfApp:chamar_senha' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-chamar">CHAMAR</button>
+    </form>
 </body>
 
 </html>

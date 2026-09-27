@@ -17,4 +17,5 @@ urlpatterns = [
 
     # Workspace
     path('fila/', views.fila, name='fila'),
+    path('chamar/', views.chamar_senha, name='chamar_senha'),
 ]
