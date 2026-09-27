@@ -1,0 +1,24 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Editar Mensagem — SWGF{% endblock %}
+{% block titulo_pagina %}Editar Mensagem #{{ mensagem.id }}{% endblock %}
+
+{% block conteudo %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="conteudo">Conteúdo da Mensagem:</label>
+        <textarea name="conteudo" id="conteudo" rows="6"
+            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px;"
+            required>{{ mensagem.conteudo }}</textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn btn-primario">Salvar</button>
+            <a href="{% url 'swgfApp:mensagens' %}" class="btn btn-secundario">Cancelar</a>
+            <a href="{% url 'swgfApp:deletar_mensagem' mensagem.id %}" class="btn btn-perigo"
+                onclick="return confirm('Deletar esta mensagem?');">Deletar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

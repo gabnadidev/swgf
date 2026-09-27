@@ -27,4 +27,10 @@ urlpatterns = [
     path('mesas/<int:mesa_id>/deletar/', views.deletar_mesa, name='deletar_mesa'),
     path('senhas/<int:senha_id>/editar/', views.editar_senha, name='editar_senha'),
     path('senhas/<int:senha_id>/deletar/', views.deletar_senha, name='deletar_senha'),
+    
+    # Mensagens (ADM)
+    path('mensagens/', views.mensagens, name='mensagens'),
+    path('mensagens/criar/', views.criar_mensagem, name='criar_mensagem'),
+    path('mensagens/<int:mensagem_id>/editar/', views.editar_mensagem, name='editar_mensagem'),
+    path('mensagens/<int:mensagem_id>/deletar/', views.deletar_mensagem, name='deletar_mensagem'),
 ]

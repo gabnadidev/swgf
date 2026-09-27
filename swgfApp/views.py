@@ -3,8 +3,9 @@ from django.utils import timezone
 from .models import Cliente, Senha, Ticket
 from .forms import RetirarSenhaForm
 from django.contrib.auth.decorators import login_required
-from .models import Cliente, Senha, Ticket, SessaoMesa, Mesa
+from .models import Cliente, Senha, Ticket, SessaoMesa, Mesa, Mensagem, Notificacao, Usuario
 from django.http import JsonResponse
+from .decorators import somente_adm
 
 
 
@@ -258,3 +259,65 @@ def deletar_senha(request, senha_id):
     senha = get_object_or_404(Senha, id=senha_id)
     senha.delete()  # O ticket é deletado em cascata (não configuramos SET_NULL aqui, é CASCADE por padrão)
     return redirect('swgfApp:fila')
+
+
+@login_required
+@somente_adm
+def mensagens(request):
+    """Lista todas as mensagens enviadas pelo ADM."""
+    lista_mensagens = Mensagem.objects.all().order_by('-id')
+    return render(request, 'swgfApp/mensagens.html', {'mensagens': lista_mensagens})
+
+
+@login_required
+@somente_adm
+def criar_mensagem(request):
+    """
+    Cria uma nova mensagem e gera notificações para todos os atendentes (não-ADMs).
+    """
+    if request.method == 'POST':
+        conteudo = request.POST.get('conteudo')
+        if conteudo:
+            mensagem = Mensagem.objects.create(
+                usuario=request.user,
+                status='enviada',
+                conteudo=conteudo,
+            )
+
+            # Gera uma notificação para cada atendente (is_adm=False)
+            atendentes = Usuario.objects.filter(is_adm=False, is_active=True)
+            for atendente in atendentes:
+                Notificacao.objects.create(
+                    usuario=atendente,
+                    mensagem=mensagem,
+                    visualizada=False,
+                )
+
+            return redirect('swgfApp:mensagens')
+
+    return render(request, 'swgfApp/criar_mensagem.html')
+
+
+@login_required
+@somente_adm
+def editar_mensagem(request, mensagem_id):
+    """Edita o conteúdo de uma mensagem existente."""
+    mensagem = get_object_or_404(Mensagem, id=mensagem_id)
+
+    if request.method == 'POST':
+        conteudo = request.POST.get('conteudo')
+        if conteudo:
+            mensagem.conteudo = conteudo
+            mensagem.save()
+        return redirect('swgfApp:mensagens')
+
+    return render(request, 'swgfApp/editar_mensagem.html', {'mensagem': mensagem})
+
+
+@login_required
+@somente_adm
+def deletar_mensagem(request, mensagem_id):
+    """Deleta uma mensagem (e as notificações associadas em cascata)."""
+    mensagem = get_object_or_404(Mensagem, id=mensagem_id)
+    mensagem.delete()
+    return redirect('swgfApp:mensagens')

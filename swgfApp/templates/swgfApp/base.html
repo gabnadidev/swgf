@@ -19,7 +19,7 @@
                     <li><a href="{% url 'swgfApp:fila' %}">FILA</a></li>
 
                     {% if user.is_authenticated and user.is_adm %}
-                    <li><a href="#">MENSAGENS</a></li>
+                    <li><a href="{% url 'swgfApp:mensagens' %}">MENSAGENS</a></li>
                     <li><a href="#">DATAS</a></li>
                     <li><a href="{% url 'swgfApp:mesas' %}">MESA</a></li>
                     <li><a href="#">HISTÓRICO</a></li>

@@ -1,0 +1,46 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Mensagens — SWGF{% endblock %}
+{% block titulo_pagina %}Mensagens Enviadas{% endblock %}
+
+{% block conteudo %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <p style="color: #666;">Mensagens enviadas para os atendentes</p>
+    <a href="{% url 'swgfApp:criar_mensagem' %}" class="btn btn-primario">+ Nova Mensagem</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Conteúdo</th>
+                <th>Remetente</th>
+                <th style="width: 120px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mensagem in mensagens %}
+            <tr>
+                <td>{{ mensagem.id }}</td>
+                <td>{{ mensagem.conteudo|truncatechars:80 }}</td>
+                <td>{{ mensagem.usuario.username }}</td>
+                <td>
+                    <a href="{% url 'swgfApp:editar_mensagem' mensagem.id %}"
+                        style="text-decoration: none; font-size: 16px;">✏️</a>
+                    <a href="{% url 'swgfApp:deletar_mensagem' mensagem.id %}"
+                        style="text-decoration: none; font-size: 16px; margin-left: 8px;"
+                        onclick="return confirm('Deletar esta mensagem?');">🗑️</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: #999; padding: 30px;">
+                    Nenhuma mensagem enviada ainda.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
