@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from .models import Cliente, Senha, Ticket
 from .forms import RetirarSenhaForm
+from django.contrib.auth.decorators import login_required
 
 
 def home(request):
@@ -54,3 +55,18 @@ def senha_emitida(request, ticket_id):
     """
     ticket = get_object_or_404(Ticket, id=ticket_id)
     return render(request, 'swgfApp/senha_emitida.html', {'ticket': ticket})
+
+
+@login_required
+def fila(request):
+    """
+    Painel do atendente: mostra as senhas aguardando e as já atendidas.
+    """
+    senhas_aguardando = Senha.objects.filter(status='aguardando').order_by('id')
+    senhas_atendidas = Senha.objects.filter(status='atendida').order_by('-id')[:10]
+
+    context = {
+        'senhas_aguardando': senhas_aguardando,
+        'senhas_atendidas': senhas_atendidas,
+    }
+    return render(request, 'swgfApp/fila.html', context)

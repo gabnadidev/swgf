@@ -137,3 +137,7 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+LOGIN_URL = 'swgfApp:login'
+LOGIN_REDIRECT_URL = 'swgfApp:fila'
+LOGOUT_REDIRECT_URL = 'swgfApp:login'
