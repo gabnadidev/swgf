@@ -1,0 +1,35 @@
+# Ambiente virtual
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/media/
+/staticfiles/
+/static/
+
+# Variáveis de ambiente (segredos!)
+.env
+.env.*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Migrações (OPCIONAL - veja observação abaixo)
+# swgfApp/migrations/*.py
+# !swgfApp/migrations/__init__.py
