@@ -1,0 +1,26 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Notas — SWGF{% endblock %}
+{% block titulo_pagina %}Anotações{% endblock %}
+
+{% block conteudo %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <p style="color: #666;">Anotações internas do ADM</p>
+    <a href="{% url 'swgfApp:criar_nota' %}" class="btn btn-primario">+ Nova Nota</a>
+</div>
+
+{% for nota in notas %}
+<div class="card" style="position: relative;">
+    <p style="white-space: pre-wrap;">{{ nota.conteudo }}</p>
+    <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+        <a href="{% url 'swgfApp:editar_nota' nota.id %}" style="text-decoration: none; font-size: 18px;">✏️</a>
+        <a href="{% url 'swgfApp:deletar_nota' nota.id %}" style="text-decoration: none; font-size: 18px;"
+            onclick="return confirm('Deletar esta nota?');">🗑️</a>
+    </div>
+</div>
+{% empty %}
+<div class="card" style="text-align: center; color: #999; padding: 40px;">
+    Nenhuma nota cadastrada ainda.
+</div>
+{% endfor %}
+{% endblock %}

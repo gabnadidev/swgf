@@ -1,0 +1,23 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Nova Data — SWGF{% endblock %}
+{% block titulo_pagina %}Nova Data{% endblock %}
+
+{% block conteudo %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <form method="post">
+        {% csrf_token %}
+
+        <label for="dia">Dia:</label>
+        <input type="date" name="dia" id="dia" required>
+
+        <label for="feriado">Nome do Feriado (opcional):</label>
+        <input type="text" name="feriado" id="feriado" placeholder="Ex: Natal, Ano Novo...">
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn btn-primario">Salvar</button>
+            <a href="{% url 'swgfApp:datas' %}" class="btn btn-secundario">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -33,4 +33,16 @@ urlpatterns = [
     path('mensagens/criar/', views.criar_mensagem, name='criar_mensagem'),
     path('mensagens/<int:mensagem_id>/editar/', views.editar_mensagem, name='editar_mensagem'),
     path('mensagens/<int:mensagem_id>/deletar/', views.deletar_mensagem, name='deletar_mensagem'),
+    
+    # Notas (ADM)
+    path('notas/', views.notas, name='notas'),
+    path('notas/criar/', views.criar_nota, name='criar_nota'),
+    path('notas/<int:nota_id>/editar/', views.editar_nota, name='editar_nota'),
+    path('notas/<int:nota_id>/deletar/', views.deletar_nota, name='deletar_nota'),
+
+    # Datas (ADM)
+    path('datas/', views.datas, name='datas'),
+    path('datas/criar/', views.criar_data, name='criar_data'),
+    path('datas/<int:data_id>/editar/', views.editar_data, name='editar_data'),
+    path('datas/<int:data_id>/deletar/', views.deletar_data, name='deletar_data'),
 ]

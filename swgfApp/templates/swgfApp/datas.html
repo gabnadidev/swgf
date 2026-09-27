@@ -1,0 +1,47 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Datas — SWGF{% endblock %}
+{% block titulo_pagina %}Feriados / Datas{% endblock %}
+
+{% block conteudo %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <p style="color: #666;">Cadastro de feriados e dias de funcionamento</p>
+    <a href="{% url 'swgfApp:criar_data' %}" class="btn btn-primario">+ Nova Data</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Nome do Feriado</th>
+                <th>Dia</th>
+                <th>Status</th>
+                <th style="width: 120px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in datas %}
+            <tr>
+                <td>{% if data.feriado %}{{ data.feriado }}{% else %}<em style="color:#999;">Dia normal</em>{% endif %}
+                </td>
+                <td>{{ data.dia|date:"d/m/Y" }}</td>
+                <td>{{ data.status }}</td>
+                <td>
+                    <a href="{% url 'swgfApp:editar_data' data.id %}"
+                        style="text-decoration: none; font-size: 16px;">✏️</a>
+                    <a href="{% url 'swgfApp:deletar_data' data.id %}"
+                        style="text-decoration: none; font-size: 16px; margin-left: 8px;"
+                        onclick="return confirm('Deletar esta data?');">🗑️</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: #999; padding: 30px;">
+                    Nenhuma data cadastrada ainda.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

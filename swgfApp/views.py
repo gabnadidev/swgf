@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from .models import Cliente, Senha, Ticket
 from .forms import RetirarSenhaForm
 from django.contrib.auth.decorators import login_required
-from .models import Cliente, Senha, Ticket, SessaoMesa, Mesa, Mensagem, Notificacao, Usuario
+from .models import (
+    Cliente, Senha, Ticket, SessaoMesa, Mesa,
+    Mensagem, Notificacao, Usuario, Nota, Data
+)
 from django.http import JsonResponse
 from .decorators import somente_adm
 
@@ -321,3 +323,93 @@ def deletar_mensagem(request, mensagem_id):
     mensagem = get_object_or_404(Mensagem, id=mensagem_id)
     mensagem.delete()
     return redirect('swgfApp:mensagens')
+
+
+# ============ NOTAS ============
+
+@login_required
+@somente_adm
+def notas(request):
+    """Lista todas as notas do ADM."""
+    lista_notas = Nota.objects.all().order_by('-id')
+    return render(request, 'swgfApp/notas.html', {'notas': lista_notas})
+
+
+@login_required
+@somente_adm
+def criar_nota(request):
+    if request.method == 'POST':
+        conteudo = request.POST.get('conteudo')
+        if conteudo:
+            Nota.objects.create(usuario=request.user, conteudo=conteudo)
+        return redirect('swgfApp:notas')
+    return render(request, 'swgfApp/criar_nota.html')
+
+
+@login_required
+@somente_adm
+def editar_nota(request, nota_id):
+    nota = get_object_or_404(Nota, id=nota_id)
+    if request.method == 'POST':
+        conteudo = request.POST.get('conteudo')
+        if conteudo:
+            nota.conteudo = conteudo
+            nota.save()
+        return redirect('swgfApp:notas')
+    return render(request, 'swgfApp/editar_nota.html', {'nota': nota})
+
+
+@login_required
+@somente_adm
+def deletar_nota(request, nota_id):
+    nota = get_object_or_404(Nota, id=nota_id)
+    nota.delete()
+    return redirect('swgfApp:notas')
+
+
+# DATAS 
+
+@login_required
+@somente_adm
+def datas(request):
+    """Lista todas as datas/feriados cadastrados."""
+    lista_datas = Data.objects.all().order_by('-dia')
+    return render(request, 'swgfApp/datas.html', {'datas': lista_datas})
+
+
+@login_required
+@somente_adm
+def criar_data(request):
+    if request.method == 'POST':
+        dia = request.POST.get('dia')
+        feriado = request.POST.get('feriado')
+        if dia:
+            Data.objects.create(
+                usuario=request.user,
+                dia=dia,
+                feriado=feriado or None,
+                status='ativo',
+            )
+        return redirect('swgfApp:datas')
+    return render(request, 'swgfApp/criar_data.html')
+
+
+@login_required
+@somente_adm
+def editar_data(request, data_id):
+    registro = get_object_or_404(Data, id=data_id)
+    if request.method == 'POST':
+        registro.dia = request.POST.get('dia', registro.dia)
+        registro.feriado = request.POST.get('feriado') or None
+        registro.status = request.POST.get('status', registro.status)
+        registro.save()
+        return redirect('swgfApp:datas')
+    return render(request, 'swgfApp/editar_data.html', {'registro': registro})
+
+
+@login_required
+@somente_adm
+def deletar_data(request, data_id):
+    registro = get_object_or_404(Data, id=data_id)
+    registro.delete()
+    return redirect('swgfApp:datas')
