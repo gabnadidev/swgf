@@ -16,8 +16,8 @@
 
         <label for="status">Status:</label>
         <select name="status" id="status">
-            <option value="ativo" {% if registro.status=='ativo' %}selected{% endif %}>Ativo</option>
-            <option value="inativo" {% if registro.status=='inativo' %}selected{% endif %}>Inativo</option>
+            <option value="ativo" {% if registro.status == 'ativo' %}selected{% endif %}>Ativo</option>
+            <option value="inativo" {% if registro.status == 'inativo' %}selected{% endif %}>Inativo</option>
         </select>
 
         <div style="display: flex; gap: 10px; margin-top: 20px;">

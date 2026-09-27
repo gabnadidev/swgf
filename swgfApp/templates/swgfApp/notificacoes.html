@@ -1,0 +1,34 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Notificações — SWGF{% endblock %}
+{% block titulo_pagina %}Notificações{% endblock %}
+
+{% block conteudo %}
+<div class="card">
+    {% for n in notificacoes %}
+    {% for n in notificacoes %}
+    <a href="{% url 'swgfApp:ler_notificacao' n.id %}"
+        class="notificacao-item {% if not n.visualizada %}nao-lida{% endif %}">
+        <div>
+            <strong>{% if n.mensagem %}Mensagem #{{ n.mensagem.id }}{% elif n.data %}Data/Feriado{% endif %}</strong>
+            <p style="color: #666; font-size: 14px; margin-top: 5px;">
+                {% if n.mensagem %}{{ n.mensagem.conteudo|truncatechars:60 }}{% endif %}
+                {% if n.data %}{{ n.data.dia|date:"d/m/Y" }} — {{ n.data.feriado|default:"Dia normal" }}{% endif %}
+            </p>
+        </div>
+        <div>
+            {% if not n.visualizada %}
+            <span style="color: #2c2cdc; font-size: 12px; font-weight: bold;">● NOVA</span>
+            {% else %}
+            <span style="color: #999; font-size: 12px;">lida</span>
+            {% endif %}
+        </div>
+    </a>
+    {% empty %}
+    <div style="text-align: center; color: #999; padding: 40px;">
+        Nenhuma notificação por aqui.
+    </div>
+    {% endfor %}
+    {% endfor %}
+</div>
+{% endblock %}

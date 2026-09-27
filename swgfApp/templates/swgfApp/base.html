@@ -48,7 +48,22 @@
                     {% if user.is_authenticated %}
                     <span>{{ user.username }} {% if user.is_adm %}(ADM){% else %}(Atendente){% endif %}</span>
                     {% endif %}
-                    <span class="sino">🔔</span>
+                    <a href="{% url 'swgfApp:notificacoes' %}" class="sino" style="text-decoration: none; position: relative;">
+                        🔔
+                        {% if notificacoes_nao_lidas > 0 %}
+                        <span style="
+                                position: absolute;
+                                top: -5px;
+                                right: -5px;
+                                background: #d32f2f;
+                                color: white;
+                                border-radius: 50%;
+                                padding: 2px 7px;
+                                font-size: 12px;
+                                font-weight: bold;
+                            ">{{ notificacoes_nao_lidas }}</span>
+                        {% endif %}
+                    </a>
                 </div>
             </div>
 

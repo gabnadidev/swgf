@@ -45,4 +45,7 @@ urlpatterns = [
     path('datas/criar/', views.criar_data, name='criar_data'),
     path('datas/<int:data_id>/editar/', views.editar_data, name='editar_data'),
     path('datas/<int:data_id>/deletar/', views.deletar_data, name='deletar_data'),
+    
+    path('notificacoes/', views.notificacoes, name='notificacoes'),
+    path('notificacoes/<int:notificacao_id>/ler/', views.ler_notificacao, name='ler_notificacao'),
 ]

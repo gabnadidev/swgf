@@ -413,3 +413,22 @@ def deletar_data(request, data_id):
     registro = get_object_or_404(Data, id=data_id)
     registro.delete()
     return redirect('swgfApp:datas')
+
+
+@login_required
+def notificacoes(request):
+    """Lista todas as notificações do usuário logado."""
+    lista = Notificacao.objects.filter(usuario=request.user).order_by('-id')
+    return render(request, 'swgfApp/notificacoes.html', {'notificacoes': lista})
+
+
+@login_required
+def ler_notificacao(request, notificacao_id):
+    """
+    Marca uma notificação como visualizada e mostra o conteúdo.
+    """
+    notificacao = get_object_or_404(Notificacao, id=notificacao_id, usuario=request.user)
+    notificacao.visualizada = True
+    notificacao.save()
+
+    return render(request, 'swgfApp/ler_notificacao.html', {'notificacao': notificacao})

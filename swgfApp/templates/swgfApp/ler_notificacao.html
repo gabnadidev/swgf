@@ -1,0 +1,24 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Notificação — SWGF{% endblock %}
+{% block titulo_pagina %}Notificação{% endblock %}
+
+{% block conteudo %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+    {% if notificacao.mensagem %}
+    <h3 style="margin-bottom: 15px;">Mensagem do ADM</h3>
+    <p style="white-space: pre-wrap; line-height: 1.6;">{{ notificacao.mensagem.conteudo }}</p>
+    <p style="color: #999; font-size: 13px; margin-top: 20px;">
+        Enviada por <strong>{{ notificacao.mensagem.usuario.username }}</strong>
+    </p>
+    {% elif notificacao.data %}
+    <h3 style="margin-bottom: 15px;">Data/Feriado Cadastrado</h3>
+    <p><strong>Dia:</strong> {{ notificacao.data.dia|date:"d/m/Y" }}</p>
+    <p><strong>Feriado:</strong> {{ notificacao.data.feriado|default:"Dia normal de funcionamento" }}</p>
+    {% endif %}
+
+    <div style="margin-top: 30px;">
+        <a href="{% url 'swgfApp:notificacoes' %}" class="btn btn-secundario">Voltar</a>
+    </div>
+</div>
+{% endblock %}
