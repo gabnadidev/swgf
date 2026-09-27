@@ -22,11 +22,11 @@
                     <li><a href="{% url 'swgfApp:mensagens' %}">MENSAGENS</a></li>
                     <li><a href="{% url 'swgfApp:datas' %}">DATAS</a></li>
                     <li><a href="{% url 'swgfApp:mesas' %}">MESA</a></li>
-                    <li><a href="#">HISTÓRICO</a></li>
+                    <li><a href="{% url 'swgfApp:historico' %}">HISTÓRICO</a></li>
                     <li><a href="{% url 'swgfApp:notas' %}">NOTAS</a></li>
                     {% elif user.is_authenticated %}
                     <li><a href="{% url 'swgfApp:mesas' %}">MESA</a></li>
-                    <li><a href="#">HISTÓRICO</a></li>
+                    <li><a href="{% url 'swgfApp:historico' %}">HISTÓRICO</a></li>
                     {% endif %}
 
                     <li><a href="{% url 'swgfApp:painel_tv' %}" target="_blank">PAINEL TV</a></li>

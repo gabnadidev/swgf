@@ -1,0 +1,50 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Histórico — SWGF{% endblock %}
+{% block titulo_pagina %}Histórico{% endblock %}
+
+{% block conteudo %}
+<div style="margin-bottom: 20px;">
+    <span style="color: #666; margin-right: 10px;">filtros</span>
+
+    <a href="?filtro=hoje" class="btn {% if filtro == 'hoje' %}btn-primario{% else %}btn-secundario{% endif %}"
+        style="padding: 6px 20px;">hoje</a>
+    <a href="?filtro=todos" class="btn {% if filtro == 'todos' %}btn-primario{% else %}btn-secundario{% endif %}"
+        style="padding: 6px 20px;">todos</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>SENHA</th>
+                <th>MESA</th>
+                <th>HORÁRIO</th>
+                <th>NOME</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td><strong>{{ ticket.senha.codigo }}</strong></td>
+                <td>
+                    {% if ticket.sessao_mesa and ticket.sessao_mesa.mesa %}
+                    {{ ticket.sessao_mesa.mesa.numero }}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td>{{ ticket.hora_atendimento|time:"H:i" }}</td>
+                <td>{{ ticket.cliente.nome|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: #999; padding: 30px;">
+                    Nenhum atendimento registrado.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

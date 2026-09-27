@@ -48,4 +48,6 @@ urlpatterns = [
     
     path('notificacoes/', views.notificacoes, name='notificacoes'),
     path('notificacoes/<int:notificacao_id>/ler/', views.ler_notificacao, name='ler_notificacao'),
+    
+    path('historico/', views.historico, name='historico'),
 ]

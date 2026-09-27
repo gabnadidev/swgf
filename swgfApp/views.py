@@ -432,3 +432,25 @@ def ler_notificacao(request, notificacao_id):
     notificacao.save()
 
     return render(request, 'swgfApp/ler_notificacao.html', {'notificacao': notificacao})
+
+
+@login_required
+def historico(request):
+    """
+    Lista os tickets que foram atendidos, com filtro por data.
+    Parâmetro GET 'filtro': 'hoje' (padrão) ou 'todos'.
+    """
+    filtro = request.GET.get('filtro', 'hoje')
+
+    # Pega todos os tickets que têm hora_atendimento preenchida (foram chamados)
+    tickets = Ticket.objects.filter(hora_atendimento__isnull=False).order_by('-id')
+
+    if filtro == 'hoje':
+        hoje = timezone.now().date()
+        tickets = tickets.filter(data=hoje)
+
+    context = {
+        'tickets': tickets,
+        'filtro': filtro,
+    }
+    return render(request, 'swgfApp/historico.html', context)
