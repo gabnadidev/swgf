@@ -194,3 +194,67 @@ def criar_mesa(request):
 
     Mesa.objects.create(numero=proximo_numero, status='disponivel')
     return redirect('swgfApp:mesas')
+
+@login_required
+def editar_mesa(request, mesa_id):
+    """Edita o número de uma mesa."""
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+
+    if request.method == 'POST':
+        novo_numero = request.POST.get('numero')
+        if novo_numero:
+            mesa.numero = novo_numero
+            mesa.save()
+        return redirect('swgfApp:mesas')
+
+    return render(request, 'swgfApp/editar_mesa.html', {'mesa': mesa})
+
+
+@login_required
+def deletar_mesa(request, mesa_id):
+    """Deleta uma mesa (os tickets perdem a referência, mas não são deletados)."""
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    mesa.delete()
+    return redirect('swgfApp:mesas')
+
+
+@login_required
+def editar_senha(request, senha_id):
+    """
+    Permite editar o status da senha e os dados do cliente associado.
+    """
+    senha = get_object_or_404(Senha, id=senha_id)
+    ticket = Ticket.objects.filter(senha=senha).first()
+
+    if request.method == 'POST':
+        # Atualiza o status da senha
+        novo_status = request.POST.get('status')
+        if novo_status:
+            senha.status = novo_status
+            senha.save()
+
+        # Atualiza os dados do cliente (se houver ticket com cliente)
+        if ticket and ticket.cliente:
+            cliente = ticket.cliente
+            cliente.nome = request.POST.get('nome', cliente.nome)
+            cliente.tipo_prioridade = request.POST.get('tipo_prioridade', cliente.tipo_prioridade)
+            cliente.save()
+
+        return redirect('swgfApp:fila')
+
+    context = {
+        'senha': senha,
+        'ticket': ticket,
+        'cliente': ticket.cliente if ticket else None,
+    }
+    return render(request, 'swgfApp/editar_senha.html', context)
+
+
+@login_required
+def deletar_senha(request, senha_id):
+    """
+    Deleta a senha e o ticket associado. O cliente permanece no banco.
+    """
+    senha = get_object_or_404(Senha, id=senha_id)
+    senha.delete()  # O ticket é deletado em cascata (não configuramos SET_NULL aqui, é CASCADE por padrão)
+    return redirect('swgfApp:fila')

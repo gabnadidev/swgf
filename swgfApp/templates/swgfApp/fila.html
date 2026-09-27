@@ -9,12 +9,14 @@
         <h2 style="text-align: center; margin-bottom: 20px;">Aguardando</h2>
         <ul style="list-style: none; padding: 0;">
             {% for senha in senhas_aguardando %}
-            <li style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+            <li
+                style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
                 <span><strong>{{ senha.codigo }}</strong></span>
-                <span style="color: #999;">{{ senha.status }}</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a href="{% url 'swgfApp:editar_senha' senha.id %}" style="text-decoration: none; font-size: 16px;">✏️</a>
+                    <span style="color: #999; font-size: 12px;">{{ senha.status }}</span>
+                </div>
             </li>
-            {% empty %}
-            <li style="text-align: center; color: #999; padding: 20px;">Nenhuma senha aguardando.</li>
             {% endfor %}
         </ul>
     </div>
@@ -23,12 +25,14 @@
         <h2 style="text-align: center; margin-bottom: 20px;">Atendidas</h2>
         <ul style="list-style: none; padding: 0;">
             {% for senha in senhas_atendidas %}
-            <li style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+            <li
+                style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
                 <span><strong>{{ senha.codigo }}</strong></span>
-                <span style="color: #999;">{{ senha.status }}</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a href="{% url 'swgfApp:editar_senha' senha.id %}" style="text-decoration: none; font-size: 16px;">✏️</a>
+                    <span style="color: #999; font-size: 12px;">{{ senha.status }}</span>
+                </div>
             </li>
-            {% empty %}
-            <li style="text-align: center; color: #999; padding: 20px;">Nenhuma senha atendida.</li>
             {% endfor %}
         </ul>
     </div>

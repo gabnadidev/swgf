@@ -1,0 +1,46 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Editar Senha — SWGF{% endblock %}
+{% block titulo_pagina %}Editar Senha {{ senha.codigo }}{% endblock %}
+
+{% block conteudo %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <form method="post">
+        {% csrf_token %}
+
+        <h3 style="margin-bottom: 15px;">Senha: {{ senha.codigo }}</h3>
+
+        <label for="status">Status da Senha:</label>
+        <select name="status" id="status" required>
+            <option value="aguardando" {% if senha.status == 'aguardando' %}selected{% endif %}>Aguardando</option>
+            <option value="chamada" {% if senha.status == 'chamada' %}selected{% endif %}>Chamada</option>
+            <option value="atendida" {% if senha.status == 'atendida' %}selected{% endif %}>Atendida</option>
+        </select>
+
+        {% if cliente %}
+        <h3 style="margin: 20px 0 15px 0;">Dados do Cliente</h3>
+
+        <label for="nome">Nome:</label>
+        <input type="text" name="nome" id="nome" value="{{ cliente.nome }}" required>
+
+        <label for="tipo_prioridade">Prioridade:</label>
+        <select name="tipo_prioridade" id="tipo_prioridade">
+            <option value="normal" {% if cliente.tipo_prioridade == 'normal' %}selected{% endif %}>Normal</option>
+            <option value="idoso" {% if cliente.tipo_prioridade == 'idoso' %}selected{% endif %}>Idoso (60+)</option>
+            <option value="gestante" {% if cliente.tipo_prioridade == 'gestante' %}selected{% endif %}>Gestante</option>
+            <option value="pcd" {% if cliente.tipo_prioridade == 'pcd' %}selected{% endif %}>Pessoa com Deficiência
+            </option>
+        </select>
+        {% else %}
+        <p style="color: #999; margin-top: 20px;">Nenhum cliente associado a esta senha.</p>
+        {% endif %}
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn btn-primario">Salvar</button>
+            <a href="{% url 'swgfApp:fila' %}" class="btn btn-secundario">Cancelar</a>
+            <a href="{% url 'swgfApp:deletar_senha' senha.id %}" class="btn btn-perigo"
+                onclick="return confirm('Tem certeza que deseja deletar a senha {{ senha.codigo }}? O ticket será deletado junto.');">Deletar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

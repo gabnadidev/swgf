@@ -23,4 +23,8 @@ urlpatterns = [
     path('mesas/', views.mesas, name='mesas'),
     path('mesas/<int:mesa_id>/alternar/', views.alternar_mesa, name='alternar_mesa'),
     path('mesas/criar/', views.criar_mesa, name='criar_mesa'),
+    path('mesas/<int:mesa_id>/editar/', views.editar_mesa, name='editar_mesa'),
+    path('mesas/<int:mesa_id>/deletar/', views.deletar_mesa, name='deletar_mesa'),
+    path('senhas/<int:senha_id>/editar/', views.editar_senha, name='editar_senha'),
+    path('senhas/<int:senha_id>/deletar/', views.deletar_senha, name='deletar_senha'),
 ]

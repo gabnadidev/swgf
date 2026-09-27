@@ -13,12 +13,17 @@
     {% for mesa in mesas %}
     <div class="card" style="text-align: center;">
         <h3 style="margin-bottom: 15px;">MESA {{ mesa.numero }}</h3>
-
+    
         <a href="{% url 'swgfApp:alternar_mesa' mesa.id %}"
             class="btn {% if mesa.status == 'disponivel' %}btn-secundario{% else %}btn-primario{% endif %}">
             {% if mesa.status == 'disponivel' %}ATIVAR{% else %}DESATIVAR{% endif %}
         </a>
-
+    
+        <div style="margin-top: 10px;">
+            <a href="{% url 'swgfApp:editar_mesa' mesa.id %}"
+                style="color: #666; text-decoration: none; font-size: 14px;">✏️ editar</a>
+        </div>
+    
         <div style="margin-top: 15px; font-size: 14px;">
             {% if mesa.status == 'disponivel' %}
             <span style="color: #4caf50;">● ativado</span>

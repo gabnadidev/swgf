@@ -1,0 +1,21 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Editar Mesa — SWGF{% endblock %}
+{% block titulo_pagina %}Editar Mesa{% endblock %}
+
+{% block conteudo %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <form method="post">
+        {% csrf_token %}
+        <label for="numero">Número da Mesa:</label>
+        <input type="number" name="numero" id="numero" value="{{ mesa.numero }}" required>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="submit" class="btn btn-primario">Salvar</button>
+            <a href="{% url 'swgfApp:mesas' %}" class="btn btn-secundario">Cancelar</a>
+            <a href="{% url 'swgfApp:deletar_mesa' mesa.id %}" class="btn btn-perigo"
+                onclick="return confirm('Tem certeza que deseja deletar a Mesa {{ mesa.numero }}?');">Deletar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
