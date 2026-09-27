@@ -4,6 +4,7 @@ from .models import Cliente, Senha, Ticket
 from .forms import RetirarSenhaForm
 from django.contrib.auth.decorators import login_required
 from .models import Cliente, Senha, Ticket, SessaoMesa, Mesa
+from django.http import JsonResponse
 
 
 
@@ -125,3 +126,35 @@ def painel_tv(request):
         'ultimas_senhas': ultimas_senhas,
     }
     return render(request, 'swgfApp/painel_tv.html', context)
+
+
+def painel_tv_json(request):
+    """
+    Retorna os dados do painel TV em formato JSON.
+    Usado pelo JavaScript para atualizar a tela sem recarregar.
+    """
+    senha_atual = Senha.objects.filter(status='chamada').order_by('-id').first()
+
+    # Função auxiliar para pegar o número da mesa de uma senha
+    def get_mesa(senha):
+        ticket = senha.ticket_set.first()
+        if ticket and ticket.sessao_mesa and ticket.sessao_mesa.mesa:
+            return ticket.sessao_mesa.mesa.numero
+        return None
+
+    # Monta o JSON
+    data = {
+        'senha_atual': {
+            'codigo': senha_atual.codigo,
+            'mesa': get_mesa(senha_atual),
+        } if senha_atual else None,
+        'ultimas_senhas': [
+            {
+                'codigo': s.codigo,
+                'mesa': get_mesa(s),
+            }
+            for s in Senha.objects.filter(status='chamada').order_by('-id')[1:6]
+        ]
+    }
+
+    return JsonResponse(data)

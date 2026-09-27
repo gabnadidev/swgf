@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Painel de Chamadas</title>
-    <meta http-equiv="refresh" content="5"> <!-- Atualiza a cada 5 segundos -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,45 +75,85 @@
 </head>
 
 <body>
-    <div class="container">
-        <div class="card">
-            <h2>SENHA ATUAL</h2>
-            {% if senha_atual %}
-            <div class="senha-atual">{{ senha_atual.codigo }}</div>
-            <div class="mesa">
-                {% with ticket=senha_atual.ticket_set.first %}
-                {% if ticket and ticket.sessao_mesa %}
-                MESA {{ ticket.sessao_mesa.mesa.numero }}
-                {% endif %}
-                {% endwith %}
-            </div>
-            {% else %}
-            <div class="vazio">Nenhuma senha chamada ainda.</div>
-            {% endif %}
-        </div>
-
-        <div class="card">
-            <h2>ÚLTIMAS SENHAS</h2>
-            {% if ultimas_senhas %}
-            <ul class="ultimas-lista">
-                {% for senha in ultimas_senhas %}
-                <li>
-                    <span>{{ senha.codigo }}</span>
-                    <span>
-                        {% with ticket=senha.ticket_set.first %}
+    <body>
+        <div class="container">
+            <div class="card">
+                <h2>SENHA ATUAL</h2>
+                <div id="senha-atual-container">
+                    {% if senha_atual %}
+                    <div class="senha-atual">{{ senha_atual.codigo }}</div>
+                    <div class="mesa" id="mesa-atual">
+                        {% with ticket=senha_atual.ticket_set.first %}
                         {% if ticket and ticket.sessao_mesa %}
                         MESA {{ ticket.sessao_mesa.mesa.numero }}
                         {% endif %}
                         {% endwith %}
-                    </span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <div class="vazio">Nenhuma senha anterior.</div>
-            {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="vazio" id="vazio-atual">Nenhuma senha chamada ainda.</div>
+                    {% endif %}
+                </div>
+            </div>
+    
+            <div class="card">
+                <h2>ÚLTIMAS SENHAS</h2>
+                <ul class="ultimas-lista" id="ultimas-lista">
+                    {% for senha in ultimas_senhas %}
+                    <li>
+                        <span>{{ senha.codigo }}</span>
+                        <span>
+                            {% with ticket=senha.ticket_set.first %}
+                            {% if ticket and ticket.sessao_mesa %}
+                            MESA {{ ticket.sessao_mesa.mesa.numero }}
+                            {% endif %}
+                            {% endwith %}
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li class="vazio">Nenhuma senha anterior.</li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-    </div>
+    
+        <script>
+            async function atualizarPainel() {
+                try {
+                    const response = await fetch("{% url 'swgfApp:painel_tv_json' %}");
+                    const data = await response.json();
+
+                    // Atualiza a senha atual
+                    const containerAtual = document.getElementById('senha-atual-container');
+                    if (data.senha_atual) {
+                        containerAtual.innerHTML = `
+                            <div class="senha-atual">${data.senha_atual.codigo}</div>
+                            <div class="mesa">MESA ${data.senha_atual.mesa ?? '--'}</div>
+                        `;
+                    } else {
+                        containerAtual.innerHTML = '<div class="vazio">Nenhuma senha chamada ainda.</div>';
+                    }
+
+                    // Atualiza as últimas senhas
+                    const listaUltimas = document.getElementById('ultimas-lista');
+                    if (data.ultimas_senhas.length > 0) {
+                        listaUltimas.innerHTML = data.ultimas_senhas.map(s => `
+                            <li>
+                                <span>${s.codigo}</span>
+                                <span>MESA ${s.mesa ?? '--'}</span>
+                            </li>
+                        `).join('');
+                    } else {
+                        listaUltimas.innerHTML = '<li class="vazio">Nenhuma senha anterior.</li>';
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar painel:', error);
+                }
+            }
+
+            // Atualiza a cada 3 segundos
+            setInterval(atualizarPainel, 3000);
+        </script>
+    </body>
 </body>
 
 </html>

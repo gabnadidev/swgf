@@ -19,4 +19,5 @@ urlpatterns = [
     path('fila/', views.fila, name='fila'),
     path('chamar/', views.chamar_senha, name='chamar_senha'),
     path('painel/', views.painel_tv, name='painel_tv'),
+    path('painel/json/', views.painel_tv_json, name='painel_tv_json'),
 ]
