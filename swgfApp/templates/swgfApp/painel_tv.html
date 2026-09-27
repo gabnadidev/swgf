@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Chamadas</title>
+    <meta http-equiv="refresh" content="5"> <!-- Atualiza a cada 5 segundos -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .card {
+            flex: 1;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .senha-atual {
+            text-align: center;
+            font-size: 72px;
+            font-weight: bold;
+            color: #2c2cdc;
+            margin: 40px 0;
+        }
+
+        .mesa {
+            text-align: center;
+            font-size: 32px;
+            color: #555;
+        }
+
+        .ultimas-lista {
+            list-style: none;
+            padding: 0;
+            font-size: 24px;
+        }
+
+        .ultimas-lista li {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .vazio {
+            text-align: center;
+            color: #999;
+            font-size: 20px;
+            padding: 40px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>SENHA ATUAL</h2>
+            {% if senha_atual %}
+            <div class="senha-atual">{{ senha_atual.codigo }}</div>
+            <div class="mesa">
+                {% with ticket=senha_atual.ticket_set.first %}
+                {% if ticket and ticket.sessao_mesa %}
+                MESA {{ ticket.sessao_mesa.mesa.numero }}
+                {% endif %}
+                {% endwith %}
+            </div>
+            {% else %}
+            <div class="vazio">Nenhuma senha chamada ainda.</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>ÚLTIMAS SENHAS</h2>
+            {% if ultimas_senhas %}
+            <ul class="ultimas-lista">
+                {% for senha in ultimas_senhas %}
+                <li>
+                    <span>{{ senha.codigo }}</span>
+                    <span>
+                        {% with ticket=senha.ticket_set.first %}
+                        {% if ticket and ticket.sessao_mesa %}
+                        MESA {{ ticket.sessao_mesa.mesa.numero }}
+                        {% endif %}
+                        {% endwith %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="vazio">Nenhuma senha anterior.</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

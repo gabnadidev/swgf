@@ -108,3 +108,20 @@ def chamar_senha(request):
 
     # 5. Redireciona de volta para a fila
     return redirect('swgfApp:fila')
+
+def painel_tv(request):
+    """
+    Painel público (TV) que mostra a senha atual e as últimas chamadas.
+    Não requer login.
+    """
+    # Pega a última senha chamada (status 'chamada')
+    senha_atual = Senha.objects.filter(status='chamada').order_by('-id').first()
+
+    # Pega as 5 últimas senhas chamadas (excluindo a atual)
+    ultimas_senhas = Senha.objects.filter(status='chamada').order_by('-id')[1:6]
+
+    context = {
+        'senha_atual': senha_atual,
+        'ultimas_senhas': ultimas_senhas,
+    }
+    return render(request, 'swgfApp/painel_tv.html', context)
