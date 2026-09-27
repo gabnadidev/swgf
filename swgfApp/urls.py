@@ -20,4 +20,7 @@ urlpatterns = [
     path('chamar/', views.chamar_senha, name='chamar_senha'),
     path('painel/', views.painel_tv, name='painel_tv'),
     path('painel/json/', views.painel_tv_json, name='painel_tv_json'),
+    path('mesas/', views.mesas, name='mesas'),
+    path('mesas/<int:mesa_id>/alternar/', views.alternar_mesa, name='alternar_mesa'),
+    path('mesas/criar/', views.criar_mesa, name='criar_mesa'),
 ]

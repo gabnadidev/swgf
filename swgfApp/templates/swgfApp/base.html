@@ -21,11 +21,11 @@
                     {% if user.is_authenticated and user.is_adm %}
                     <li><a href="#">MENSAGENS</a></li>
                     <li><a href="#">DATAS</a></li>
-                    <li><a href="#">MESA</a></li>
+                    <li><a href="{% url 'swgfApp:mesas' %}">MESA</a></li>
                     <li><a href="#">HISTÓRICO</a></li>
                     <li><a href="#">NOTAS</a></li>
                     {% elif user.is_authenticated %}
-                    <li><a href="#">MESA</a></li>
+                    <li><a href="{% url 'swgfApp:mesas' %}">MESA</a></li>
                     <li><a href="#">HISTÓRICO</a></li>
                     {% endif %}
 

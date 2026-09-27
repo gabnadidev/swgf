@@ -1,0 +1,36 @@
+{% extends 'swgfApp/base.html' %}
+
+{% block titulo %}Mesas — SWGF{% endblock %}
+{% block titulo_pagina %}Mesas{% endblock %}
+
+{% block conteudo %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <p style="color: #666;">Gerencie as mesas de atendimento</p>
+    <a href="{% url 'swgfApp:criar_mesa' %}" class="btn btn-primario">+ Nova Mesa</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+    {% for mesa in mesas %}
+    <div class="card" style="text-align: center;">
+        <h3 style="margin-bottom: 15px;">MESA {{ mesa.numero }}</h3>
+
+        <a href="{% url 'swgfApp:alternar_mesa' mesa.id %}"
+            class="btn {% if mesa.status == 'disponivel' %}btn-secundario{% else %}btn-primario{% endif %}">
+            {% if mesa.status == 'disponivel' %}ATIVAR{% else %}DESATIVAR{% endif %}
+        </a>
+
+        <div style="margin-top: 15px; font-size: 14px;">
+            {% if mesa.status == 'disponivel' %}
+            <span style="color: #4caf50;">● ativado</span>
+            {% else %}
+            <span style="color: #d32f2f;">● desativado</span>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="card" style="text-align: center; color: #999; grid-column: 1 / -1;">
+        Nenhuma mesa cadastrada ainda. Clique em "+ Nova Mesa" para começar.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -158,3 +158,39 @@ def painel_tv_json(request):
     }
 
     return JsonResponse(data)
+
+
+@login_required
+def mesas(request):
+    """
+    Lista todas as mesas com seus status.
+    Permite ativar/desativar e criar novas mesas.
+    """
+    lista_mesas = Mesa.objects.all().order_by('numero')
+    return render(request, 'swgfApp/mesas.html', {'mesas': lista_mesas})
+
+
+@login_required
+def alternar_mesa(request, mesa_id):
+    """
+    Ativa ou desativa uma mesa (inverte o status).
+    """
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    if mesa.status == 'disponivel':
+        mesa.status = 'inativa'
+    else:
+        mesa.status = 'disponivel'
+    mesa.save()
+    return redirect('swgfApp:mesas')
+
+
+@login_required
+def criar_mesa(request):
+    """
+    Cria uma nova mesa com o próximo número disponível.
+    """
+    ultimo_numero = Mesa.objects.order_by('-numero').first()
+    proximo_numero = (ultimo_numero.numero + 1) if ultimo_numero else 1
+
+    Mesa.objects.create(numero=proximo_numero, status='disponivel')
+    return redirect('swgfApp:mesas')
