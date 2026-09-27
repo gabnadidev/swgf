@@ -1,20 +1,21 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends 'swgfApp/base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>SWGF — Sistema de Gestão de Filas</title>
-</head>
+{% block titulo %}Início — SWGF{% endblock %}
+{% block titulo_pagina %}Início{% endblock %}
 
-<body>
-    <h1>Bem-vindo ao SWGF</h1>
-    <p>Sistema de Gestão de Filas e Atendimento</p>
+{% block conteudo %}
+<div class="card">
+    <h2>Bem-vindo ao SWGF</h2>
+    <p style="margin-top: 10px;">Sistema de Gestão de Filas e Atendimento</p>
 
-    <ul>
-        <li><a href="#">Totem (Retirar Senha)</a></li>
-        <li><a href="#">Painel TV (Chamada de Senhas)</a></li>
-        <li><a href="#">Workspace (Atendentes e ADMs)</a></li>
-    </ul>
-</body>
-
-</html>
+    <div style="display: flex; gap: 15px; margin-top: 25px;">
+        <a href="{% url 'swgfApp:totem' %}" class="btn btn-primario">🎫 Totem (Retirar Senha)</a>
+        <a href="{% url 'swgfApp:painel_tv' %}" class="btn btn-secundario" target="_blank">📺 Painel TV</a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'swgfApp:fila' %}" class="btn btn-secundario">👥 Fila</a>
+        {% else %}
+        <a href="{% url 'swgfApp:login' %}" class="btn btn-secundario">🔐 Login</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

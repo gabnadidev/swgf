@@ -141,3 +141,7 @@ MAILERS = {
 LOGIN_URL = 'swgfApp:login'
 LOGIN_REDIRECT_URL = 'swgfApp:fila'
 LOGOUT_REDIRECT_URL = 'swgfApp:login'
+
+# Arquivos estáticos (CSS, JS, imagens)
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']

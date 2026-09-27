@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block titulo %}SWGF{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'swgfApp/css/style.css' %}">
+</head>
+
+<body>
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div>
+                <div class="sidebar-logo">SWGF</div>
+                <ul class="sidebar-menu">
+                    <li><a href="{% url 'swgfApp:home' %}">HOME</a></li>
+                    <li><a href="{% url 'swgfApp:fila' %}">FILA</a></li>
+
+                    {% if user.is_authenticated and user.is_adm %}
+                    <li><a href="#">MENSAGENS</a></li>
+                    <li><a href="#">DATAS</a></li>
+                    <li><a href="#">MESA</a></li>
+                    <li><a href="#">HISTÓRICO</a></li>
+                    <li><a href="#">NOTAS</a></li>
+                    {% elif user.is_authenticated %}
+                    <li><a href="#">MESA</a></li>
+                    <li><a href="#">HISTÓRICO</a></li>
+                    {% endif %}
+
+                    <li><a href="{% url 'swgfApp:painel_tv' %}" target="_blank">PAINEL TV</a></li>
+                </ul>
+            </div>
+
+            {% if user.is_authenticated %}
+            <a href="{% url 'swgfApp:logout' %}" class="sidebar-sair">
+                ⬅ SAIR
+            </a>
+            {% endif %}
+        </aside>
+
+        <!-- CONTEÚDO -->
+        <main class="conteudo">
+            <div class="topo">
+                <h1>{% block titulo_pagina %}SWGF{% endblock %}</h1>
+                <div class="usuario-info">
+                    {% if user.is_authenticated %}
+                    <span>{{ user.username }} {% if user.is_adm %}(ADM){% else %}(Atendente){% endif %}</span>
+                    {% endif %}
+                    <span class="sino">🔔</span>
+                </div>
+            </div>
+
+            {% block conteudo %}{% endblock %}
+        </main>
+    </div>
+</body>
+
+</html>

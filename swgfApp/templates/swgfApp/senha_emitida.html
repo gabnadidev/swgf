@@ -1,64 +1,16 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends 'swgfApp/base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Senha Emitida</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+{% block titulo %}Senha Emitida{% endblock %}
+{% block titulo_pagina %}Senha Emitida{% endblock %}
 
-        .card {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 350px;
-            text-align: center;
-        }
-
-        h1 {
-            margin-bottom: 10px;
-        }
-
-        .codigo {
-            font-size: 48px;
-            font-weight: bold;
-            color: #2c2cdc;
-            margin: 20px 0;
-        }
-
-        .horario {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #2c2cdc;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="card">
-        <h1>Senha</h1>
-        <div class="codigo">{{ ticket.senha.codigo }}</div>
-        <div class="horario">Horário: {{ ticket.hora_emissao|date:"H:i" }}</div>
-        <a href="{% url 'swgfApp:totem' %}" class="btn">Nova senha</a>
+{% block conteudo %}
+<div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+    <h2>Senha</h2>
+    <div style="font-size: 64px; font-weight: bold; color: #2c2cdc; margin: 20px 0;">
+        {{ ticket.senha.codigo }}
     </div>
-</body>
+    <div style="color: #666;">Horário: {{ ticket.hora_emissao|date:"H:i" }}</div>
 
-</html>
+    <a href="{% url 'swgfApp:totem' %}" class="btn btn-primario" style="margin-top: 25px;">Nova senha</a>
+</div>
+{% endblock %}
