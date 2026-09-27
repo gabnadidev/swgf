@@ -68,49 +68,43 @@ def fila(request):
     senhas_aguardando = Senha.objects.filter(status='aguardando').order_by('id')
     senhas_atendidas = Senha.objects.filter(status__in=['chamada', 'atendida']).order_by('-id')[:10]
 
+    # Descobre em qual mesa o atendente está agora
+    sessao_atual = SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).first()
+    mesa_atual = sessao_atual.mesa if sessao_atual else None
+
+    # Lista as mesas ativas para o seletor
+    mesas_disponiveis = Mesa.objects.filter(status='disponivel').order_by('numero')
+
     context = {
         'senhas_aguardando': senhas_aguardando,
         'senhas_atendidas': senhas_atendidas,
+        'mesa_atual': mesa_atual,
+        'mesas_disponiveis': mesas_disponiveis,
     }
     return render(request, 'swgfApp/fila.html', context)
 
 
 @login_required
 def chamar_senha(request):
-    """
-    Chama a próxima senha da fila (a mais antiga com status 'aguardando').
-    Cria uma SessaoMesa se o atendente ainda não tiver uma ativa.
-    """
-    # 1. Pega a próxima senha da fila
-    proxima_senha = Senha.objects.filter(status='aguardando').order_by('id').first()
-
-    if not proxima_senha:
-        # Se não houver senha, volta para a fila com uma mensagem
+    # Verifica se o atendente está em uma mesa
+    sessao = SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).first()
+    if not sessao:
+        # Se não estiver, volta para a fila (a tela vai avisar para escolher uma mesa)
         return redirect('swgfApp:fila')
 
-    # 2. Verifica se o atendente tem uma sessão de mesa ativa
-    sessao = SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).first()
+    proxima_senha = Senha.objects.filter(status='aguardando').order_by('id').first()
+    if not proxima_senha:
+        return redirect('swgfApp:fila')
 
-    if not sessao:
-        # Se não tiver, cria uma para a Mesa 1 (temporário)
-        mesa = Mesa.objects.first()
-        if not mesa:
-            # Se não existir nenhuma mesa, cria a Mesa 1
-            mesa = Mesa.objects.create(numero=1, status='disponivel')
-        sessao = SessaoMesa.objects.create(usuario=request.user, mesa=mesa)
-
-    # 3. Atualiza o status da senha
     proxima_senha.status = 'chamada'
     proxima_senha.save()
 
-    # 4. Atualiza o ticket correspondente
     ticket = Ticket.objects.filter(senha=proxima_senha).first()
     if ticket:
         ticket.hora_atendimento = timezone.now().time()
         ticket.sessao_mesa = sessao
         ticket.save()
 
-    # 5. Redireciona de volta para a fila
     return redirect('swgfApp:fila')
 
 def painel_tv(request):
@@ -454,3 +448,22 @@ def historico(request):
         'filtro': filtro,
     }
     return render(request, 'swgfApp/historico.html', context)
+
+
+@login_required
+def trocar_mesa(request, mesa_id):
+    """
+    Encerra a sessão ativa do usuário (se houver) e cria uma nova
+    com a mesa escolhida.
+    """
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+
+    # Encerra qualquer sessão ativa do usuário
+    SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).update(
+        data_fim=timezone.now()
+    )
+
+    # Cria uma nova sessão com a mesa escolhida
+    SessaoMesa.objects.create(usuario=request.user, mesa=mesa)
+
+    return redirect('swgfApp:fila')

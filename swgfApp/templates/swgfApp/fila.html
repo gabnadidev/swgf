@@ -4,6 +4,30 @@
 {% block titulo_pagina %}Fila de Atendimento{% endblock %}
 
 {% block conteudo %}
+<!-- Seletor de Mesa -->
+<div class="card" style="margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <strong>Sua mesa:</strong>
+        {% if mesa_atual %}
+        <span style="color: #2c2cdc; font-size: 18px; font-weight: bold;">MESA {{ mesa_atual.numero }}</span>
+        <span style="color: #999;">| Trocar para:</span>
+        {% else %}
+        <span style="color: #d32f2f; font-weight: bold;">Nenhuma mesa selecionada</span>
+        <span style="color: #999;">| Escolha uma:</span>
+        {% endif %}
+
+        {% for mesa in mesas_disponiveis %}
+        {% if mesa != mesa_atual %}
+        <a href="{% url 'swgfApp:trocar_mesa' mesa.id %}" class="btn btn-secundario" style="padding: 6px 15px;">
+            Mesa {{ mesa.numero }}
+        </a>
+        {% endif %}
+        {% empty %}
+        <span style="color: #999;">Nenhuma mesa disponível. Ative uma em "Mesa".</span>
+        {% endfor %}
+    </div>
+</div>
+
 <div style="display: flex; gap: 20px;">
     <div class="card" style="flex: 1;">
         <h2 style="text-align: center; margin-bottom: 20px;">Aguardando</h2>
@@ -13,10 +37,13 @@
                 style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
                 <span><strong>{{ senha.codigo }}</strong></span>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <a href="{% url 'swgfApp:editar_senha' senha.id %}" style="text-decoration: none; font-size: 16px;">✏️</a>
+                    <a href="{% url 'swgfApp:editar_senha' senha.id %}"
+                        style="text-decoration: none; font-size: 16px;">✏️</a>
                     <span style="color: #999; font-size: 12px;">{{ senha.status }}</span>
                 </div>
             </li>
+            {% empty %}
+            <li style="text-align: center; color: #999; padding: 20px;">Nenhuma senha aguardando.</li>
             {% endfor %}
         </ul>
     </div>
@@ -29,10 +56,13 @@
                 style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
                 <span><strong>{{ senha.codigo }}</strong></span>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <a href="{% url 'swgfApp:editar_senha' senha.id %}" style="text-decoration: none; font-size: 16px;">✏️</a>
+                    <a href="{% url 'swgfApp:editar_senha' senha.id %}"
+                        style="text-decoration: none; font-size: 16px;">✏️</a>
                     <span style="color: #999; font-size: 12px;">{{ senha.status }}</span>
                 </div>
             </li>
+            {% empty %}
+            <li style="text-align: center; color: #999; padding: 20px;">Nenhuma senha atendida.</li>
             {% endfor %}
         </ul>
     </div>
@@ -40,6 +70,11 @@
 
 <form method="post" action="{% url 'swgfApp:chamar_senha' %}" style="text-align: center; margin-top: 25px;">
     {% csrf_token %}
+    {% if not mesa_atual %}
+    <button type="submit" class="btn btn-primario" style="padding: 15px 60px; font-size: 18px;" disabled
+        title="Escolha uma mesa primeiro">CHAMAR</button>
+    {% else %}
     <button type="submit" class="btn btn-primario" style="padding: 15px 60px; font-size: 18px;">CHAMAR</button>
+    {% endif %}
 </form>
 {% endblock %}

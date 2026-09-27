@@ -50,4 +50,6 @@ urlpatterns = [
     path('notificacoes/<int:notificacao_id>/ler/', views.ler_notificacao, name='ler_notificacao'),
     
     path('historico/', views.historico, name='historico'),
+    
+    path('mesas/<int:mesa_id>/trocar/', views.trocar_mesa, name='trocar_mesa'),
 ]
