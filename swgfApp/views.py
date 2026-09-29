@@ -32,8 +32,25 @@ def totem(request):
 
             # 2. Gera o código da senha (ex: A0001, A0002...)
             hoje = timezone.now().date()
-            total_hoje = Ticket.objects.filter(data=hoje).count()
-            codigo = f"A{total_hoje + 1:04d}"
+
+            # Pega o último ticket do dia para descobrir o último número usado
+            ultimo_ticket = Ticket.objects.filter(data=hoje).order_by('-id').first()
+
+            if ultimo_ticket and ultimo_ticket.senha:
+                ultimo_codigo = ultimo_ticket.senha.codigo  # Ex: "A0005"
+                try:
+                    ultimo_numero = int(ultimo_codigo[1:])  # Pega só o número (5)
+                except (ValueError, IndexError):
+                    ultimo_numero = 0
+                proximo_numero = ultimo_numero + 1
+            else:
+                proximo_numero = 1
+
+            # Garante que o código não existe (evita colisão)
+            codigo = f"A{proximo_numero:04d}"
+            while Senha.objects.filter(codigo=codigo).exists():
+                proximo_numero += 1
+                codigo = f"A{proximo_numero:04d}"
 
             # 3. Cria a senha
             senha = Senha.objects.create(
