@@ -1,4 +1,5 @@
 {% extends 'swgfApp/base.html' %}
+{# Edição do número da mesa (somente ADMIN). #}
 
 {% block titulo %}Editar Mesa — SWGF{% endblock %}
 {% block titulo_pagina %}Editar Mesa{% endblock %}
@@ -7,15 +8,17 @@
 <div class="card" style="max-width: 500px; margin: 0 auto;">
     <form method="post">
         {% csrf_token %}
-        <label for="numero">Número da Mesa:</label>
-        <input type="number" name="numero" id="numero" value="{{ mesa.numero }}" required>
+        {% include 'swgfApp/_campos_form.html' %}
 
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <div class="botoes-form">
             <button type="submit" class="btn btn-primario">Salvar</button>
             <a href="{% url 'swgfApp:mesas' %}" class="btn btn-secundario">Cancelar</a>
-            <a href="{% url 'swgfApp:deletar_mesa' mesa.id %}" class="btn btn-perigo"
-                onclick="return confirm('Tem certeza que deseja deletar a Mesa {{ mesa.numero }}?');">Deletar</a>
+            <button type="submit" form="form-deletar" class="btn btn-perigo">Deletar</button>
         </div>
+    </form>
+    <form id="form-deletar" method="post" action="{% url 'swgfApp:deletar_mesa' mesa.id %}"
+        onsubmit="return confirm('Tem certeza que deseja deletar esta mesa?');">
+        {% csrf_token %}
     </form>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends 'swgfApp/base.html' %}
+{# Formulário de edição (somente ADMIN). Os campos vêm do formulário em forms.py. #}
 
 {% block titulo %}Editar Nota — SWGF{% endblock %}
 {% block titulo_pagina %}Editar Nota{% endblock %}
@@ -7,17 +8,17 @@
 <div class="card" style="max-width: 600px; margin: 0 auto;">
     <form method="post">
         {% csrf_token %}
-        <label for="conteudo">Conteúdo:</label>
-        <textarea name="conteudo" id="conteudo" rows="8"
-            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px;"
-            required>{{ nota.conteudo }}</textarea>
+        {% include 'swgfApp/_campos_form.html' %}
 
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <div class="botoes-form">
             <button type="submit" class="btn btn-primario">Salvar</button>
             <a href="{% url 'swgfApp:notas' %}" class="btn btn-secundario">Cancelar</a>
-            <a href="{% url 'swgfApp:deletar_nota' nota.id %}" class="btn btn-perigo"
-                onclick="return confirm('Deletar esta nota?');">Deletar</a>
+            <button type="submit" form="form-deletar" class="btn btn-perigo">Deletar</button>
         </div>
+    </form>
+    <form id="form-deletar" method="post" action="{% url 'swgfApp:deletar_nota' nota.id %}"
+        onsubmit="return confirm('Deletar esta nota?');">
+        {% csrf_token %}
     </form>
 </div>
 {% endblock %}

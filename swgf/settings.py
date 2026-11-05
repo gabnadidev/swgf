@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import sys
 from pathlib import Path
-from decouple import config
+
+from decouple import config  # lê as configurações secretas do arquivo .env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -64,6 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Disponibiliza o contador do sino em todos os templates.
                 'swgfApp.context_processors.notificacoes_nao_lidas',
             ],
         },
@@ -72,6 +75,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'swgf.wsgi.application'
 
+# Avisa ao Django que o usuário do sistema é o modelo personalizado (swgfApp/models.py).
 AUTH_USER_MODEL = 'swgfApp.Usuario'
 
 
@@ -91,6 +95,11 @@ DATABASES = {
         'OPTIONS': {'charset': 'utf8mb4'},
     }
 }
+
+# Os testes automatizados rodam em um SQLite em memória, pois o usuário do MySQL
+# só tem acesso ao banco "swgf" e não pode criar o banco temporário de testes.
+if 'test' in sys.argv:
+    DATABASES['default'] = {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'}
 
 
 # Password validation
@@ -115,9 +124,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-br'
 
-TIME_ZONE = 'UTC'
+# Com UTC, o "hoje" do sistema virava às 21h no Brasil, e a fila, o histórico e
+# os horários ficavam errados. Agora tudo segue o horário de Brasília.
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
@@ -139,6 +150,7 @@ MAILERS = {
     },
 }
 
+# Para onde o Django leva o usuário: sem login, depois do login e depois do logout.
 LOGIN_URL = 'swgfApp:login'
 LOGIN_REDIRECT_URL = 'swgfApp:fila'
 LOGOUT_REDIRECT_URL = 'swgfApp:login'

@@ -1,50 +1,59 @@
 {% extends 'swgfApp/base.html' %}
+{# Histórico de atendimentos, com filtros (FiltroHistoricoForm) e paginação. #}
 
 {% block titulo %}Histórico — SWGF{% endblock %}
 {% block titulo_pagina %}Histórico{% endblock %}
 
 {% block conteudo %}
-<div style="margin-bottom: 20px;">
-    <span style="color: #666; margin-right: 10px;">filtros</span>
+{% include 'swgfApp/_filtros.html' %}
 
-    <a href="?filtro=hoje" class="btn {% if filtro == 'hoje' %}btn-primario{% else %}btn-secundario{% endif %}"
-        style="padding: 6px 20px;">hoje</a>
-    <a href="?filtro=todos" class="btn {% if filtro == 'todos' %}btn-primario{% else %}btn-secundario{% endif %}"
-        style="padding: 6px 20px;">todos</a>
-</div>
-
-<div class="card">
+<div class="card tabela-rolavel">
     <table>
         <thead>
             <tr>
                 <th>SENHA</th>
-                <th>MESA</th>
+                <th>DATA</th>
                 <th>HORÁRIO</th>
                 <th>NOME</th>
+                <th>PRIORIDADE</th>
+                <th>MESA</th>
+                <th>ATENDENTE</th>
+                <th>STATUS</th>
             </tr>
         </thead>
         <tbody>
             {% for ticket in tickets %}
             <tr>
-                <td><strong>{{ ticket.senha.codigo }}</strong></td>
-                <td>
-                    {% if ticket.sessao_mesa and ticket.sessao_mesa.mesa %}
-                    {{ ticket.sessao_mesa.mesa.numero }}
-                    {% else %}
-                    —
-                    {% endif %}
-                </td>
+                <td><strong>{{ ticket.senha.codigo|default:"—" }}</strong></td>
+                <td>{{ ticket.data|date:"d/m/Y" }}</td>
                 <td>{{ ticket.hora_atendimento|time:"H:i" }}</td>
                 <td>{{ ticket.cliente.nome|default:"—" }}</td>
+                <td>{{ ticket.cliente.get_tipo_prioridade_display|default:"—" }}</td>
+                <td>{{ ticket.sessao_mesa.mesa.numero|default:"—" }}</td>
+                <td>{{ ticket.sessao_mesa.usuario.username|default:"—" }}</td>
+                <td>{{ ticket.senha.get_status_display|default:"—" }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" style="text-align: center; color: #999; padding: 30px;">
-                    Nenhum atendimento registrado.
+                <td colspan="8" style="text-align: center; color: #999; padding: 30px;">
+                    Nenhum atendimento encontrado.
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    {# Os links repetem os parâmetros para não perder o filtro ao mudar de página #}
+    {% if is_paginated %}
+    <div class="paginacao">
+        {% if page_obj.has_previous %}
+        <a href="?{% if parametros_filtro %}{{ parametros_filtro }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-secundario btn-pequeno">← Anterior</a>
+        {% endif %}
+        <span>Página {{ page_obj.number }} de {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?{% if parametros_filtro %}{{ parametros_filtro }}&amp;{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-secundario btn-pequeno">Próxima →</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

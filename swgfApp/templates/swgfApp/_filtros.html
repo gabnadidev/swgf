@@ -1,0 +1,16 @@
+{# Barra de filtros reaproveitada nas listas. Recebe "filtro_form" da view. #}
+{# method="get" deixa os filtros na URL, então é possível recarregar ou compartilhar. #}
+<form method="get" class="card filtros">
+    {% if filtro_form.non_field_errors %}<div class="erro-form filtros-erro">{{ filtro_form.non_field_errors.0 }}</div>{% endif %}
+    {% for campo in filtro_form %}
+    <div class="filtro-campo">
+        <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+        {{ campo }}
+        {% for erro in campo.errors %}<div class="erro-form">{{ erro }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="filtro-acoes">
+        <button type="submit" class="btn btn-primario">Filtrar</button>
+        <a href="{{ request.path }}" class="btn btn-secundario">Limpar</a>
+    </div>
+</form>

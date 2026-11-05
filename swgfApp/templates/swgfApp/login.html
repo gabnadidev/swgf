@@ -1,4 +1,5 @@
 {% extends 'swgfApp/base.html' %}
+{# Tela de login, usada pela LoginUsuarioView. #}
 
 {% block titulo %}Login — SWGF{% endblock %}
 {% block titulo_pagina %}Login Workspace{% endblock %}
@@ -6,7 +7,7 @@
 {% block conteudo %}
 <div class="card" style="max-width: 400px; margin: 0 auto;">
     {% if form.errors %}
-    <div style="color: red; margin-bottom: 15px;">Usuário ou senha inválidos.</div>
+    <div class="erro-form" style="margin: 0 0 15px 0;">Usuário ou senha inválidos.</div>
     {% endif %}
 
     <form method="post">

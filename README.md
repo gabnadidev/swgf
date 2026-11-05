@@ -16,28 +16,41 @@ O SWGF resolve o problema de organização de filas presenciais, oferecendo:
 - **Django 4.2 LTS**
 - **MySQL 8.0**
 - **HTML5 + CSS3 + JavaScript (Fetch API / AJAX)**
-- **PyMySQL** (conector MySQL)
+- **mysqlclient** (conector MySQL)
 - **python-decouple** (gerenciamento de variáveis de ambiente)
+
+## ✅ Requisitos da B2
+
+| Requisito | Onde está |
+| --- | --- |
+| Relacionamento 1:1 | `Ticket.senha` (`OneToOneField`) em `swgfApp/models.py` |
+| Relacionamento 1:N | `Cliente → Ticket`, `Mesa → SessaoMesa`, `Usuario → Nota` e outros, em `swgfApp/models.py` |
+| Filtros | Formulários `Filtro*Form` em `swgfApp/forms.py` e `FiltroMixin` em `swgfApp/mixins.py` |
+| Dois níveis de acesso | `UsuarioLogadoMixin` e `AdministradorMixin` em `swgfApp/mixins.py` |
+| Views baseadas em classe | Todas as views de `swgfApp/views.py` |
 
 ## 📋 Funcionalidades
 
 ### Cliente (Totem)
 - Retirada de senha com nome e prioridade
 - Impressão/visualização da senha gerada
+- Totem fechado em feriado ativo
 
 ### Atendente (Workspace)
 - Login autenticado
-- Seleção e troca de mesa
-- Chamada de próxima senha da fila
-- Visualização do histórico de atendimentos
+- Seleção e troca de mesa (uma pessoa por mesa)
+- Chamada da próxima senha, com prioridade para idosos, gestantes e PCDs
+- Finalização do atendimento
+- Histórico de atendimentos com filtros
 - Recebimento de notificações do ADM
 
 ### Administrador (ADM)
+- Tudo o que o atendente faz, mais:
 - CRUD de Mesas
 - CRUD de Senhas (via Fila)
 - CRUD de Mensagens (com notificações para atendentes)
 - CRUD de Notas internas
-- CRUD de Datas e Feriados
+- CRUD de Datas e Feriados (com notificações para atendentes)
 
 ### Painel TV
 - Exibição da senha atual e mesa
@@ -112,6 +125,9 @@ O sistema possui as seguintes tabelas:
 
     Admin: http://127.0.0.1:8000/admin/
 
+10. Rode os testes automatizados:
+    python manage.py test
+
 
 Estrutura do Projeto:
     swgf/
@@ -121,9 +137,11 @@ Estrutura do Projeto:
 │   ├── templates/
 │   ├── admin.py
 │   ├── context_processors.py
-│   ├── decorators.py
 │   ├── forms.py
+│   ├── mixins.py
 │   ├── models.py
+│   ├── signals.py
+│   ├── tests.py
 │   ├── urls.py
 │   └── views.py
 ├── static/             # Arquivos estáticos (CSS, JS)

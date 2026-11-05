@@ -1,4 +1,5 @@
 {% extends 'swgfApp/base.html' %}
+{# Formulário de cadastro (somente ADMIN). Os campos vêm do formulário em forms.py. #}
 
 {% block titulo %}Nova Data — SWGF{% endblock %}
 {% block titulo_pagina %}Nova Data{% endblock %}
@@ -7,14 +8,9 @@
 <div class="card" style="max-width: 500px; margin: 0 auto;">
     <form method="post">
         {% csrf_token %}
+        {% include 'swgfApp/_campos_form.html' %}
 
-        <label for="dia">Dia:</label>
-        <input type="date" name="dia" id="dia" required>
-
-        <label for="feriado">Nome do Feriado (opcional):</label>
-        <input type="text" name="feriado" id="feriado" placeholder="Ex: Natal, Ano Novo...">
-
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <div class="botoes-form">
             <button type="submit" class="btn btn-primario">Salvar</button>
             <a href="{% url 'swgfApp:datas' %}" class="btn btn-secundario">Cancelar</a>
         </div>

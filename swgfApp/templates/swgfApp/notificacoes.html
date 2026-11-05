@@ -1,11 +1,13 @@
 {% extends 'swgfApp/base.html' %}
+{# Notificações do usuário logado, com filtro de lidas e não lidas. #}
 
 {% block titulo %}Notificações — SWGF{% endblock %}
 {% block titulo_pagina %}Notificações{% endblock %}
 
 {% block conteudo %}
+{% include 'swgfApp/_filtros.html' %}
+
 <div class="card">
-    {% for n in notificacoes %}
     {% for n in notificacoes %}
     <a href="{% url 'swgfApp:ler_notificacao' n.id %}"
         class="notificacao-item {% if not n.visualizada %}nao-lida{% endif %}">
@@ -28,7 +30,6 @@
     <div style="text-align: center; color: #999; padding: 40px;">
         Nenhuma notificação por aqui.
     </div>
-    {% endfor %}
     {% endfor %}
 </div>
 {% endblock %}

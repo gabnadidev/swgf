@@ -82,13 +82,8 @@
             <div id="senha-atual-container">
                 {% if senha_atual %}
                 <div class="senha-atual">{{ senha_atual.codigo }}</div>
-                <div class="mesa">
-                    {% with ticket=senha_atual.ticket_set.first %}
-                    {% if ticket and ticket.sessao_mesa %}
-                    MESA {{ ticket.sessao_mesa.mesa.numero }}
-                    {% endif %}
-                    {% endwith %}
-                </div>
+                {# senha.ticket: acesso direto pelo relacionamento 1:1 #}
+                <div class="mesa">MESA {{ senha_atual.ticket.sessao_mesa.mesa.numero|default:"--" }}</div>
                 {% else %}
                 <div class="vazio">Nenhuma senha chamada ainda.</div>
                 {% endif %}
@@ -101,13 +96,7 @@
                 {% for senha in ultimas_senhas %}
                 <li>
                     <span>{{ senha.codigo }}</span>
-                    <span>
-                        {% with ticket=senha.ticket_set.first %}
-                        {% if ticket and ticket.sessao_mesa %}
-                        MESA {{ ticket.sessao_mesa.mesa.numero }}
-                        {% endif %}
-                        {% endwith %}
-                    </span>
+                    <span>MESA {{ senha.ticket.sessao_mesa.mesa.numero|default:"--" }}</span>
                 </li>
                 {% empty %}
                 <li class="vazio">Nenhuma senha anterior.</li>
@@ -117,6 +106,7 @@
     </div>
 
     <script>
+        // Busca os dados no servidor e redesenha o painel sem recarregar a página.
         async function atualizarPainel() {
             try {
                 const response = await fetch("{% url 'swgfApp:painel_tv_json' %}");
@@ -148,6 +138,7 @@
             }
         }
 
+        // Repete a consulta a cada 3 segundos.
         setInterval(atualizarPainel, 3000);
     </script>
 </body>

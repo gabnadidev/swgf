@@ -1,0 +1,8 @@
+{# Mostra os campos de um formulário com seus erros de validação. Recebe "form" da view. #}
+{% if form.non_field_errors %}<div class="erro-form">{{ form.non_field_errors.0 }}</div>{% endif %}
+{% for campo in form %}
+<label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+{{ campo }}
+{% if campo.help_text %}<small class="ajuda-form">{{ campo.help_text }}</small>{% endif %}
+{% for erro in campo.errors %}<div class="erro-form">{{ erro }}</div>{% endfor %}
+{% endfor %}

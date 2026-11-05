@@ -1,40 +1,53 @@
 {% extends 'swgfApp/base.html' %}
+{# Gestão de mesas (somente ADMIN). O botão mostra a ação disponível, não o estado atual. #}
 
 {% block titulo %}Mesas — SWGF{% endblock %}
 {% block titulo_pagina %}Mesas{% endblock %}
 
 {% block conteudo %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div class="cabecalho-lista">
     <p style="color: #666;">Gerencie as mesas de atendimento</p>
-    <a href="{% url 'swgfApp:criar_mesa' %}" class="btn btn-primario">+ Nova Mesa</a>
+    <form method="post" action="{% url 'swgfApp:criar_mesa' %}" class="form-linha">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primario">+ Nova Mesa</button>
+    </form>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+{% include 'swgfApp/_filtros.html' %}
+
+<div class="grade-mesas">
     {% for mesa in mesas %}
     <div class="card" style="text-align: center;">
         <h3 style="margin-bottom: 15px;">MESA {{ mesa.numero }}</h3>
-    
-        <a href="{% url 'swgfApp:alternar_mesa' mesa.id %}"
-            class="btn {% if mesa.status == 'disponivel' %}btn-secundario{% else %}btn-primario{% endif %}">
-            {% if mesa.status == 'disponivel' %}ATIVAR{% else %}DESATIVAR{% endif %}
-        </a>
-    
+
+        <form method="post" action="{% url 'swgfApp:alternar_mesa' mesa.id %}" class="form-linha">
+            {% csrf_token %}
+            <button type="submit"
+                class="btn {% if mesa.status == 'disponivel' %}btn-secundario{% else %}btn-primario{% endif %}">{% if mesa.status == 'disponivel' %}DESATIVAR{% else %}ATIVAR{% endif %}</button>
+        </form>
+
         <div style="margin-top: 10px;">
-            <a href="{% url 'swgfApp:editar_mesa' mesa.id %}"
-                style="color: #666; text-decoration: none; font-size: 14px;">✏️ editar</a>
+            <a href="{% url 'swgfApp:editar_mesa' mesa.id %}" style="color: #666; text-decoration: none; font-size: 14px;">✏️ editar</a>
         </div>
-    
+
         <div style="margin-top: 15px; font-size: 14px;">
-            {% if mesa.status == 'disponivel' %}
-            <span style="color: #4caf50;">● ativado</span>
+            {% if mesa.status != 'disponivel' %}
+            <span style="color: #d32f2f;">● desativada</span>
+            {% elif mesa.esta_ocupada %}
+            <span style="color: #e68a00;">● ocupada por {{ mesa.sessao_aberta.usuario.username|default:"—" }}</span>
+            <form method="post" action="{% url 'swgfApp:liberar_mesa' mesa.id %}" style="margin-top: 10px;"
+                onsubmit="return confirm('Liberar a Mesa {{ mesa.numero }}?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secundario btn-pequeno">Liberar</button>
+            </form>
             {% else %}
-            <span style="color: #d32f2f;">● desativado</span>
+            <span style="color: #4caf50;">● livre</span>
             {% endif %}
         </div>
     </div>
     {% empty %}
     <div class="card" style="text-align: center; color: #999; grid-column: 1 / -1;">
-        Nenhuma mesa cadastrada ainda. Clique em "+ Nova Mesa" para começar.
+        Nenhuma mesa encontrada.
     </div>
     {% endfor %}
 </div>

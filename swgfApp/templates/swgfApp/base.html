@@ -1,32 +1,35 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
+{# Layout comum: as outras páginas herdam deste arquivo com extends. #}
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block titulo %}SWGF{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'swgfApp/css/style.css' %}">
 </head>
 
 <body>
     <div class="layout">
-        <!-- SIDEBAR -->
+        <!-- SIDEBAR: os links dependem do nível de acesso do usuário -->
         <aside class="sidebar">
             <div>
                 <div class="sidebar-logo">SWGF</div>
                 <ul class="sidebar-menu">
                     <li><a href="{% url 'swgfApp:home' %}">HOME</a></li>
-                    <li><a href="{% url 'swgfApp:fila' %}">FILA</a></li>
 
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'swgfApp:fila' %}">FILA</a></li>
+                    <li><a href="{% url 'swgfApp:historico' %}">HISTÓRICO</a></li>
+                    {% endif %}
+
+                    {# Itens exclusivos do nível ADMIN #}
                     {% if user.is_authenticated and user.is_adm %}
+                    <li><a href="{% url 'swgfApp:mesas' %}">MESAS</a></li>
                     <li><a href="{% url 'swgfApp:mensagens' %}">MENSAGENS</a></li>
                     <li><a href="{% url 'swgfApp:datas' %}">DATAS</a></li>
-                    <li><a href="{% url 'swgfApp:mesas' %}">MESA</a></li>
-                    <li><a href="{% url 'swgfApp:historico' %}">HISTÓRICO</a></li>
                     <li><a href="{% url 'swgfApp:notas' %}">NOTAS</a></li>
-                    {% elif user.is_authenticated %}
-                    <li><a href="{% url 'swgfApp:mesas' %}">MESA</a></li>
-                    <li><a href="{% url 'swgfApp:historico' %}">HISTÓRICO</a></li>
                     {% endif %}
 
                     <li><a href="{% url 'swgfApp:painel_tv' %}" target="_blank">PAINEL TV</a></li>
@@ -34,9 +37,11 @@
             </div>
 
             {% if user.is_authenticated %}
-            <a href="{% url 'swgfApp:logout' %}" class="sidebar-sair">
-                ⬅ SAIR
-            </a>
+            {# O logout é um POST: um simples link não deve encerrar a sessão. #}
+            <form method="post" action="{% url 'swgfApp:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="sidebar-sair">⬅ SAIR</button>
+            </form>
             {% endif %}
         </aside>
 
@@ -47,25 +52,21 @@
                 <div class="usuario-info">
                     {% if user.is_authenticated %}
                     <span>{{ user.username }} {% if user.is_adm %}(ADM){% else %}(Atendente){% endif %}</span>
-                    {% endif %}
-                    <a href="{% url 'swgfApp:notificacoes' %}" class="sino" style="text-decoration: none; position: relative;">
+                    <a href="{% url 'swgfApp:notificacoes' %}" class="sino" title="Notificações">
                         🔔
+                        {# Contador vem de context_processors.py #}
                         {% if notificacoes_nao_lidas > 0 %}
-                        <span style="
-                                position: absolute;
-                                top: -5px;
-                                right: -5px;
-                                background: #d32f2f;
-                                color: white;
-                                border-radius: 50%;
-                                padding: 2px 7px;
-                                font-size: 12px;
-                                font-weight: bold;
-                            ">{{ notificacoes_nao_lidas }}</span>
+                        <span class="sino-contador">{{ notificacoes_nao_lidas }}</span>
                         {% endif %}
                     </a>
+                    {% endif %}
                 </div>
             </div>
+
+            {# Avisos enviados pelas views com messages.success/error/info #}
+            {% for aviso in messages %}
+            <div class="aviso aviso-{{ aviso.tags }}">{{ aviso }}</div>
+            {% endfor %}
 
             {% block conteudo %}{% endblock %}
         </main>

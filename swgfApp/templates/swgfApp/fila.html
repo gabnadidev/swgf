@@ -1,15 +1,20 @@
 {% extends 'swgfApp/base.html' %}
+{# Tela de trabalho: escolha da mesa, atendimento atual, fila e filtros. #}
 
 {% block titulo %}Fila — SWGF{% endblock %}
 {% block titulo_pagina %}Fila de Atendimento{% endblock %}
 
 {% block conteudo %}
-<!-- Seletor de Mesa -->
-<div class="card" style="margin-bottom: 20px;">
-    <div style="display: flex; align-items: center; gap: 15px;">
+<!-- Seletor de mesa: lista só as mesas ativas e livres -->
+<div class="card">
+    <div class="barra-mesa">
         <strong>Sua mesa:</strong>
         {% if mesa_atual %}
         <span style="color: #2c2cdc; font-size: 18px; font-weight: bold;">MESA {{ mesa_atual.numero }}</span>
+        <form method="post" action="{% url 'swgfApp:sair_mesa' %}" class="form-linha">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secundario btn-pequeno">Sair da mesa</button>
+        </form>
         <span style="color: #999;">| Trocar para:</span>
         {% else %}
         <span style="color: #d32f2f; font-weight: bold;">Nenhuma mesa selecionada</span>
@@ -17,64 +22,83 @@
         {% endif %}
 
         {% for mesa in mesas_disponiveis %}
-        {% if mesa != mesa_atual %}
-        <a href="{% url 'swgfApp:trocar_mesa' mesa.id %}" class="btn btn-secundario" style="padding: 6px 15px;">
-            Mesa {{ mesa.numero }}
-        </a>
-        {% endif %}
+        <form method="post" action="{% url 'swgfApp:trocar_mesa' mesa.id %}" class="form-linha">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secundario btn-pequeno">Mesa {{ mesa.numero }}</button>
+        </form>
         {% empty %}
-        <span style="color: #999;">Nenhuma mesa disponível. Ative uma em "Mesa".</span>
+        <span style="color: #999;">Nenhuma mesa livre no momento.</span>
         {% endfor %}
     </div>
 </div>
 
-<div style="display: flex; gap: 20px;">
-    <div class="card" style="flex: 1;">
+<!-- Atendimento em andamento, com o botão de chamar a próxima senha -->
+<div class="card" style="text-align: center;">
+    {% if senha_em_atendimento %}
+    <p style="color: #666;">Em atendimento na sua mesa</p>
+    <p style="font-size: 36px; font-weight: bold; color: #2c2cdc; margin: 8px 0;">{{ senha_em_atendimento.codigo }}</p>
+    <p style="margin-bottom: 15px;">{{ senha_em_atendimento.ticket.cliente.nome|default:"—" }}</p>
+    {% endif %}
+    <div class="barra-acoes">
+        <form method="post" action="{% url 'swgfApp:chamar_senha' %}" class="form-linha">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primario" style="padding: 15px 60px; font-size: 18px;"
+                {% if not mesa_atual %}disabled title="Escolha uma mesa primeiro"{% endif %}>CHAMAR PRÓXIMA</button>
+        </form>
+        {% if senha_em_atendimento %}
+        <form method="post" action="{% url 'swgfApp:finalizar_atendimento' %}" class="form-linha">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secundario" style="padding: 15px 30px; font-size: 18px;">FINALIZAR</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{% include 'swgfApp/_filtros.html' %}
+
+<div class="colunas">
+    <div class="card">
         <h2 style="text-align: center; margin-bottom: 20px;">Aguardando</h2>
-        <ul style="list-style: none; padding: 0;">
+        <ul class="lista-senhas">
+            {# A ordem da lista já é a ordem de chamada: prioritários primeiro. #}
             {% for senha in senhas_aguardando %}
-            <li
-                style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                <span><strong>{{ senha.codigo }}</strong></span>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <a href="{% url 'swgfApp:editar_senha' senha.id %}"
-                        style="text-decoration: none; font-size: 16px;">✏️</a>
-                    <span style="color: #999; font-size: 12px;">{{ senha.status }}</span>
-                </div>
+            <li>
+                <span>
+                    <strong>{{ senha.codigo }}</strong> — {{ senha.ticket.cliente.nome|default:"—" }}
+                    {% if senha.ticket.cliente.eh_prioritario %}
+                    <span class="selo-prioridade">{{ senha.ticket.cliente.get_tipo_prioridade_display }}</span>
+                    {% endif %}
+                </span>
+                {% if user.is_adm %}
+                <a href="{% url 'swgfApp:editar_senha' senha.id %}" class="link-icone" title="Editar">✏️</a>
+                {% endif %}
             </li>
             {% empty %}
-            <li style="text-align: center; color: #999; padding: 20px;">Nenhuma senha aguardando.</li>
+            <li class="lista-vazia">Nenhuma senha aguardando.</li>
             {% endfor %}
         </ul>
     </div>
 
-    <div class="card" style="flex: 1;">
-        <h2 style="text-align: center; margin-bottom: 20px;">Atendidas</h2>
-        <ul style="list-style: none; padding: 0;">
-            {% for senha in senhas_atendidas %}
-            <li
-                style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                <span><strong>{{ senha.codigo }}</strong></span>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <a href="{% url 'swgfApp:editar_senha' senha.id %}"
-                        style="text-decoration: none; font-size: 16px;">✏️</a>
-                    <span style="color: #999; font-size: 12px;">{{ senha.status }}</span>
-                </div>
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 20px;">Chamadas hoje</h2>
+        <ul class="lista-senhas">
+            {% for senha in senhas_chamadas %}
+            <li>
+                <span>
+                    <strong>{{ senha.codigo }}</strong>
+                    {% if senha.ticket.sessao_mesa.mesa %}— Mesa {{ senha.ticket.sessao_mesa.mesa.numero }}{% endif %}
+                </span>
+                <span class="lista-acoes">
+                    <span class="status-{{ senha.status }}">{{ senha.get_status_display }}</span>
+                    {% if user.is_adm %}
+                    <a href="{% url 'swgfApp:editar_senha' senha.id %}" class="link-icone" title="Editar">✏️</a>
+                    {% endif %}
+                </span>
             </li>
             {% empty %}
-            <li style="text-align: center; color: #999; padding: 20px;">Nenhuma senha atendida.</li>
+            <li class="lista-vazia">Nenhuma senha chamada hoje.</li>
             {% endfor %}
         </ul>
     </div>
 </div>
-
-<form method="post" action="{% url 'swgfApp:chamar_senha' %}" style="text-align: center; margin-top: 25px;">
-    {% csrf_token %}
-    {% if not mesa_atual %}
-    <button type="submit" class="btn btn-primario" style="padding: 15px 60px; font-size: 18px;" disabled
-        title="Escolha uma mesa primeiro">CHAMAR</button>
-    {% else %}
-    <button type="submit" class="btn btn-primario" style="padding: 15px 60px; font-size: 18px;">CHAMAR</button>
-    {% endif %}
-</form>
 {% endblock %}

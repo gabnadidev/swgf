@@ -1,4 +1,5 @@
 {% extends 'swgfApp/base.html' %}
+{# Formulário de cadastro (somente ADMIN). Os campos vêm do formulário em forms.py. #}
 
 {% block titulo %}Nova Mensagem — SWGF{% endblock %}
 {% block titulo_pagina %}Nova Mensagem{% endblock %}
@@ -7,13 +8,9 @@
 <div class="card" style="max-width: 600px; margin: 0 auto;">
     <form method="post">
         {% csrf_token %}
+        {% include 'swgfApp/_campos_form.html' %}
 
-        <label for="conteudo">Conteúdo da Mensagem:</label>
-        <textarea name="conteudo" id="conteudo" rows="6"
-            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 14px;"
-            required></textarea>
-
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <div class="botoes-form">
             <button type="submit" class="btn btn-primario">Enviar</button>
             <a href="{% url 'swgfApp:mensagens' %}" class="btn btn-secundario">Cancelar</a>
         </div>

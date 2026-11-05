@@ -1,4 +1,5 @@
 {% extends 'swgfApp/base.html' %}
+{# Formulário de edição (somente ADMIN). Os campos vêm do formulário em forms.py. #}
 
 {% block titulo %}Editar Data — SWGF{% endblock %}
 {% block titulo_pagina %}Editar Data{% endblock %}
@@ -7,25 +8,17 @@
 <div class="card" style="max-width: 500px; margin: 0 auto;">
     <form method="post">
         {% csrf_token %}
+        {% include 'swgfApp/_campos_form.html' %}
 
-        <label for="dia">Dia:</label>
-        <input type="date" name="dia" id="dia" value="{{ registro.dia|date:'Y-m-d' }}" required>
-
-        <label for="feriado">Nome do Feriado (opcional):</label>
-        <input type="text" name="feriado" id="feriado" value="{{ registro.feriado|default:'' }}">
-
-        <label for="status">Status:</label>
-        <select name="status" id="status">
-            <option value="ativo" {% if registro.status == 'ativo' %}selected{% endif %}>Ativo</option>
-            <option value="inativo" {% if registro.status == 'inativo' %}selected{% endif %}>Inativo</option>
-        </select>
-
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <div class="botoes-form">
             <button type="submit" class="btn btn-primario">Salvar</button>
             <a href="{% url 'swgfApp:datas' %}" class="btn btn-secundario">Cancelar</a>
-            <a href="{% url 'swgfApp:deletar_data' registro.id %}" class="btn btn-perigo"
-                onclick="return confirm('Deletar esta data?');">Deletar</a>
+            <button type="submit" form="form-deletar" class="btn btn-perigo">Deletar</button>
         </div>
+    </form>
+    <form id="form-deletar" method="post" action="{% url 'swgfApp:deletar_data' registro.id %}"
+        onsubmit="return confirm('Deletar esta data?');">
+        {% csrf_token %}
     </form>
 </div>
 {% endblock %}

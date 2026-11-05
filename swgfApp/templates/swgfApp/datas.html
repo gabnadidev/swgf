@@ -1,15 +1,18 @@
 {% extends 'swgfApp/base.html' %}
+{# Cadastro de feriados e dias de funcionamento (somente ADMIN). #}
 
 {% block titulo %}Datas — SWGF{% endblock %}
 {% block titulo_pagina %}Feriados / Datas{% endblock %}
 
 {% block conteudo %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <p style="color: #666;">Cadastro de feriados e dias de funcionamento</p>
+<div class="cabecalho-lista">
+    <p style="color: #666;">Em um feriado ativo, o totem não emite senhas</p>
     <a href="{% url 'swgfApp:criar_data' %}" class="btn btn-primario">+ Nova Data</a>
 </div>
 
-<div class="card">
+{% include 'swgfApp/_filtros.html' %}
+
+<div class="card tabela-rolavel">
     <table>
         <thead>
             <tr>
@@ -22,22 +25,22 @@
         <tbody>
             {% for data in datas %}
             <tr>
-                <td>{% if data.feriado %}{{ data.feriado }}{% else %}<em style="color:#999;">Dia normal</em>{% endif %}
-                </td>
+                <td>{% if data.feriado %}{{ data.feriado }}{% else %}<em style="color:#999;">Dia normal</em>{% endif %}</td>
                 <td>{{ data.dia|date:"d/m/Y" }}</td>
-                <td>{{ data.status }}</td>
+                <td>{{ data.get_status_display }}</td>
                 <td>
-                    <a href="{% url 'swgfApp:editar_data' data.id %}"
-                        style="text-decoration: none; font-size: 16px;">✏️</a>
-                    <a href="{% url 'swgfApp:deletar_data' data.id %}"
-                        style="text-decoration: none; font-size: 16px; margin-left: 8px;"
-                        onclick="return confirm('Deletar esta data?');">🗑️</a>
+                    <a href="{% url 'swgfApp:editar_data' data.id %}" class="link-icone" title="Editar">✏️</a>
+                    <form method="post" action="{% url 'swgfApp:deletar_data' data.id %}" class="form-linha"
+                        onsubmit="return confirm('Deletar esta data?');">
+                        {% csrf_token %}
+                        <button type="submit" class="botao-icone" title="Deletar">🗑️</button>
+                    </form>
                 </td>
             </tr>
             {% empty %}
             <tr>
                 <td colspan="4" style="text-align: center; color: #999; padding: 30px;">
-                    Nenhuma data cadastrada ainda.
+                    Nenhuma data encontrada.
                 </td>
             </tr>
             {% endfor %}

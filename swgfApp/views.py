@@ -1,486 +1,462 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
-from .forms import RetirarSenhaForm
-from django.contrib.auth.decorators import login_required
-from .models import (
-    Cliente, Senha, Ticket, SessaoMesa, Mesa,
-    Mensagem, Notificacao, Usuario, Nota, Data
-)
+"""
+Views do SWGF, todas baseadas em classes.
+
+Controle de acesso, feito pelos mixins de mixins.py:
+    sem mixin            -> público (home, totem e painel TV)
+    UsuarioLogadoMixin   -> nível USER: qualquer usuário logado
+    AdministradorMixin   -> nível ADMIN: apenas is_adm = True
+
+As regras de negócio ficam em models.py. As views só recebem o pedido,
+chamam o modelo e devolvem a resposta.
+"""
+
+from django.contrib import messages
+from django.contrib.auth.views import LoginView
 from django.http import JsonResponse
-from .decorators import somente_adm
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.views import View
+from django.views.generic import (
+    CreateView, DeleteView, DetailView, FormView, ListView, TemplateView, UpdateView,
+)
+
+from .forms import (
+    DataForm, FiltroDataForm, FiltroFilaForm, FiltroHistoricoForm, FiltroMensagemForm,
+    FiltroMesaForm, FiltroNotaForm, FiltroNotificacaoForm, MensagemForm, MesaForm, NotaForm,
+    RetirarSenhaForm, SenhaForm,
+)
+from .mixins import (
+    AdministradorMixin, ApenasPostMixin, FiltroMixin, MensagemSucessoDeleteMixin,
+    UsuarioLogadoMixin,
+)
+from .models import (
+    Data, Mensagem, Mesa, Nota, Notificacao, RegraDeNegocioError, Senha, SessaoMesa, Ticket,
+    notificar_atendentes,
+)
 
 
+# =============================================================================
+# Páginas públicas
+# =============================================================================
 
-def home(request):
-    return render(request, 'swgfApp/home.html')
+class HomeView(TemplateView):
+    """Página inicial com os atalhos do sistema."""
+    template_name = 'swgfApp/home.html'
 
 
-def totem(request):
-    """
-    Tela do Totem: exibe o formulário para o cliente retirar a senha.
-    Se for POST (envio), cria o Cliente, a Senha e o Ticket, e redireciona
-    para a tela de confirmação.
-    """
-    if request.method == 'POST':
-        form = RetirarSenhaForm(request.POST)
-        if form.is_valid():
-            # 1. Cria o cliente
-            cliente = Cliente.objects.create(
+class LoginUsuarioView(LoginView):
+    """Login. Quem já está logado é levado direto para a fila."""
+    template_name = 'swgfApp/login.html'
+    redirect_authenticated_user = True
+
+
+class TotemView(FormView):
+    """Tela onde o cliente retira a senha. Não emite senhas em feriado ativo."""
+    template_name = 'swgfApp/totem.html'
+    form_class = RetirarSenhaForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['feriado'] = Data.feriado_de_hoje()  # o template esconde o formulário
+        return context
+
+    def form_valid(self, form):
+        # Confere de novo no servidor: o formulário pode ter sido aberto antes
+        # de o feriado ser cadastrado.
+        if Data.feriado_de_hoje():
+            messages.error(self.request, "Hoje não há atendimento (feriado).")
+            return redirect('swgfApp:totem')
+        try:
+            ticket = Ticket.emitir(
                 nome=form.cleaned_data['nome'],
                 tipo_prioridade=form.cleaned_data['tipo_prioridade'],
             )
-
-            # 2. Gera o código da senha (ex: A0001, A0002...)
-            hoje = timezone.now().date()
-
-            # Pega o último ticket do dia para descobrir o último número usado
-            ultimo_ticket = Ticket.objects.filter(data=hoje).order_by('-id').first()
-
-            if ultimo_ticket and ultimo_ticket.senha:
-                ultimo_codigo = ultimo_ticket.senha.codigo  # Ex: "A0005"
-                try:
-                    ultimo_numero = int(ultimo_codigo[1:])  # Pega só o número (5)
-                except (ValueError, IndexError):
-                    ultimo_numero = 0
-                proximo_numero = ultimo_numero + 1
-            else:
-                proximo_numero = 1
-
-            # Garante que o código não existe (evita colisão)
-            codigo = f"A{proximo_numero:04d}"
-            while Senha.objects.filter(codigo=codigo).exists():
-                proximo_numero += 1
-                codigo = f"A{proximo_numero:04d}"
-
-            # 3. Cria a senha
-            senha = Senha.objects.create(
-                codigo=codigo,
-                status='aguardando',
-            )
-
-            # 4. Cria o ticket (liga cliente + senha)
-            ticket = Ticket.objects.create(
-                cliente=cliente,
-                senha=senha,
-            )
-
-            # 5. Redireciona para a tela de confirmação
-            return redirect('swgfApp:senha_emitida', ticket_id=ticket.id)
-    else:
-        form = RetirarSenhaForm()
-
-    return render(request, 'swgfApp/totem.html', {'form': form})
+        except RegraDeNegocioError as erro:
+            messages.error(self.request, str(erro))
+            return redirect('swgfApp:totem')
+        return redirect('swgfApp:senha_emitida', pk=ticket.pk)
 
 
-def senha_emitida(request, ticket_id):
+class SenhaEmitidaView(DetailView):
+    """Confirmação com a senha gerada e o horário."""
+    model = Ticket
+    template_name = 'swgfApp/senha_emitida.html'
+    context_object_name = 'ticket'
+
+
+def dados_do_painel():
     """
-    Tela de confirmação: mostra a senha gerada e o horário.
+    Reúne os dados do painel TV. A página e o JSON usam esta mesma função para
+    nunca mostrarem informações diferentes.
+
+    Senha atual: a chamada mais recente ainda em atendimento.
+    Últimas senhas: as outras cinco chamadas mais recentes de hoje.
     """
-    ticket = get_object_or_404(Ticket, id=ticket_id)
-    return render(request, 'swgfApp/senha_emitida.html', {'ticket': ticket})
+    chamadas = Senha.objects.chamadas_de_hoje()
+    atual = chamadas.filter(status=Senha.Status.CHAMADA).first()
+    ultimas = chamadas.exclude(pk=atual.pk) if atual else chamadas
+    return atual, ultimas[:5]
 
 
-@login_required
-def fila(request):
-    senhas_aguardando = Senha.objects.filter(status='aguardando').order_by('id')
-    senhas_atendidas = Senha.objects.filter(status__in=['chamada', 'atendida']).order_by('-id')[:10]
-
-    # Descobre em qual mesa o atendente está agora
-    sessao_atual = SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).first()
-    mesa_atual = sessao_atual.mesa if sessao_atual else None
-
-    # Lista as mesas ativas para o seletor
-    mesas_disponiveis = Mesa.objects.filter(status='disponivel').order_by('numero')
-
-    context = {
-        'senhas_aguardando': senhas_aguardando,
-        'senhas_atendidas': senhas_atendidas,
-        'mesa_atual': mesa_atual,
-        'mesas_disponiveis': mesas_disponiveis,
-    }
-    return render(request, 'swgfApp/fila.html', context)
+def numero_da_mesa(senha):
+    """Número da mesa que chamou a senha, ou None se ela não existir mais."""
+    sessao = senha.ticket.sessao_mesa
+    return sessao.mesa.numero if sessao and sessao.mesa else None
 
 
-@login_required
-def chamar_senha(request):
-    # Verifica se o atendente está em uma mesa
-    sessao = SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).first()
-    if not sessao:
-        # Se não estiver, volta para a fila (a tela vai avisar para escolher uma mesa)
+class PainelTVView(TemplateView):
+    """Painel público exibido na TV. A primeira carga vem pronta do servidor."""
+    template_name = 'swgfApp/painel_tv.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['senha_atual'], context['ultimas_senhas'] = dados_do_painel()
+        return context
+
+
+class PainelTVJsonView(View):
+    """Mesmos dados em JSON, lidos pelo JavaScript do painel a cada 3 segundos."""
+
+    def get(self, request):
+        atual, ultimas = dados_do_painel()
+        return JsonResponse({
+            'senha_atual': {
+                'codigo': atual.codigo,
+                'mesa': numero_da_mesa(atual),
+            } if atual else None,
+            'ultimas_senhas': [
+                {'codigo': senha.codigo, 'mesa': numero_da_mesa(senha)}
+                for senha in ultimas
+            ],
+        })
+
+
+# =============================================================================
+# Atendimento (nível USER)
+# =============================================================================
+
+class FilaView(UsuarioLogadoMixin, TemplateView):
+    """Tela de trabalho: mesa atual, fila de espera, chamadas e filtros."""
+    template_name = 'swgfApp/fila.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        sessao = self.request.user.sessao_ativa
+
+        # O filtro atinge apenas a lista de espera. O botão CHAMAR sempre
+        # segue a fila completa, senão o filtro mudaria a ordem de atendimento.
+        fila = Senha.objects.fila_de_hoje()
+        filtro_form = FiltroFilaForm(self.request.GET or None)
+        if filtro_form.is_bound and filtro_form.is_valid():
+            fila = filtro_form.filtrar(fila)
+
+        context.update({
+            'filtro_form': filtro_form,
+            'senhas_aguardando': fila,
+            'senhas_chamadas': Senha.objects.chamadas_de_hoje()[:10],
+            'mesa_atual': sessao.mesa if sessao else None,
+            'senha_em_atendimento': sessao.senha_em_atendimento() if sessao else None,
+            # Só aparecem as mesas ativas e sem ninguém usando.
+            'mesas_disponiveis': Mesa.objects.com_ocupacao().filter(
+                status=Mesa.Status.DISPONIVEL, esta_ocupada=False
+            ),
+        })
+        return context
+
+
+class ChamarSenhaView(UsuarioLogadoMixin, ApenasPostMixin, View):
+    """Botão CHAMAR: chama a próxima senha da fila para a mesa do usuário."""
+
+    def post(self, request):
+        sessao = request.user.sessao_ativa
+        if not sessao:
+            messages.error(request, "Escolha uma mesa antes de chamar uma senha.")
+            return redirect('swgfApp:fila')
+
+        senha = sessao.chamar_proxima()
+        if senha:
+            messages.success(request, f"Senha {senha.codigo} chamada para a Mesa {sessao.mesa.numero}.")
+        else:
+            messages.info(request, "Não há senhas aguardando.")
         return redirect('swgfApp:fila')
 
-    proxima_senha = Senha.objects.filter(status='aguardando').order_by('id').first()
-    if not proxima_senha:
+
+class FinalizarAtendimentoView(UsuarioLogadoMixin, ApenasPostMixin, View):
+    """Encerra o atendimento atual: a senha passa de "chamada" para "atendida"."""
+
+    def post(self, request):
+        sessao = request.user.sessao_ativa
+        senha = sessao.finalizar_atendimento() if sessao else None
+        if senha:
+            messages.success(request, f"Atendimento da senha {senha.codigo} finalizado.")
+        else:
+            messages.info(request, "Nenhum atendimento em andamento.")
         return redirect('swgfApp:fila')
 
-    proxima_senha.status = 'chamada'
-    proxima_senha.save()
 
-    ticket = Ticket.objects.filter(senha=proxima_senha).first()
-    if ticket:
-        ticket.hora_atendimento = timezone.now().time()
-        ticket.sessao_mesa = sessao
-        ticket.save()
+class TrocarMesaView(UsuarioLogadoMixin, ApenasPostMixin, View):
+    """Coloca o usuário na mesa escolhida. A regra está em SessaoMesa.entrar."""
 
-    return redirect('swgfApp:fila')
-
-def painel_tv(request):
-    """
-    Painel público (TV) que mostra a senha atual e as últimas chamadas.
-    Não requer login.
-    """
-    # Pega a última senha chamada (status 'chamada')
-    senha_atual = Senha.objects.filter(status='chamada').order_by('-id').first()
-
-    # Pega as 5 últimas senhas chamadas (excluindo a atual)
-    ultimas_senhas = Senha.objects.filter(status='chamada').order_by('-id')[1:6]
-
-    context = {
-        'senha_atual': senha_atual,
-        'ultimas_senhas': ultimas_senhas,
-    }
-    return render(request, 'swgfApp/painel_tv.html', context)
+    def post(self, request, pk):
+        get_object_or_404(Mesa, pk=pk)  # mesa inexistente devolve erro 404
+        try:
+            SessaoMesa.entrar(request.user, pk)
+        except RegraDeNegocioError as erro:
+            messages.error(request, str(erro))
+        return redirect('swgfApp:fila')
 
 
-def painel_tv_json(request):
-    """
-    Retorna os dados do painel TV em formato JSON.
-    Usado pelo JavaScript para atualizar a tela sem recarregar.
-    """
-    senha_atual = Senha.objects.filter(status='chamada').order_by('-id').first()
+class SairMesaView(UsuarioLogadoMixin, ApenasPostMixin, View):
+    """Libera a mesa do usuário, finalizando antes o atendimento em andamento."""
 
-    # Função auxiliar para pegar o número da mesa de uma senha
-    def get_mesa(senha):
-        ticket = senha.ticket_set.first()
-        if ticket and ticket.sessao_mesa and ticket.sessao_mesa.mesa:
-            return ticket.sessao_mesa.mesa.numero
-        return None
-
-    # Monta o JSON
-    data = {
-        'senha_atual': {
-            'codigo': senha_atual.codigo,
-            'mesa': get_mesa(senha_atual),
-        } if senha_atual else None,
-        'ultimas_senhas': [
-            {
-                'codigo': s.codigo,
-                'mesa': get_mesa(s),
-            }
-            for s in Senha.objects.filter(status='chamada').order_by('-id')[1:6]
-        ]
-    }
-
-    return JsonResponse(data)
+    def post(self, request):
+        sessao = request.user.sessao_ativa
+        if sessao:
+            sessao.finalizar_atendimento()
+        request.user.encerrar_sessoes()
+        return redirect('swgfApp:fila')
 
 
-@login_required
-def mesas(request):
-    """
-    Lista todas as mesas com seus status.
-    Permite ativar/desativar e criar novas mesas.
-    """
-    lista_mesas = Mesa.objects.all().order_by('numero')
-    return render(request, 'swgfApp/mesas.html', {'mesas': lista_mesas})
+class HistoricoView(UsuarioLogadoMixin, FiltroMixin, ListView):
+    """Atendimentos registrados, com filtros e paginação. Abre mostrando hoje."""
+    # select_related traz as tabelas ligadas em uma só consulta ao banco.
+    queryset = Ticket.objects.filter(hora_atendimento__isnull=False).select_related(
+        'senha', 'cliente', 'sessao_mesa__mesa', 'sessao_mesa__usuario'
+    ).order_by('-data', '-hora_atendimento')
+    template_name = 'swgfApp/historico.html'
+    context_object_name = 'tickets'
+    paginate_by = 20
+    filtro_form_class = FiltroHistoricoForm
+    filtro_padrao = {'periodo': 'hoje'}
 
 
-@login_required
-def alternar_mesa(request, mesa_id):
-    """
-    Ativa ou desativa uma mesa (inverte o status).
-    """
-    mesa = get_object_or_404(Mesa, id=mesa_id)
-    if mesa.status == 'disponivel':
-        mesa.status = 'inativa'
-    else:
-        mesa.status = 'disponivel'
-    mesa.save()
-    return redirect('swgfApp:mesas')
+class NotificacaoListView(UsuarioLogadoMixin, FiltroMixin, ListView):
+    """Notificações do usuário logado."""
+    queryset = Notificacao.objects.select_related('mensagem', 'data').order_by('-id')
+    template_name = 'swgfApp/notificacoes.html'
+    context_object_name = 'notificacoes'
+    filtro_form_class = FiltroNotificacaoForm
+
+    def get_queryset(self):
+        # Cada usuário só enxerga as próprias notificações.
+        return super().get_queryset().filter(usuario=self.request.user)
 
 
-@login_required
-def criar_mesa(request):
-    """
-    Cria uma nova mesa com o próximo número disponível.
-    """
-    ultimo_numero = Mesa.objects.order_by('-numero').first()
-    proximo_numero = (ultimo_numero.numero + 1) if ultimo_numero else 1
+class LerNotificacaoView(UsuarioLogadoMixin, DetailView):
+    """Mostra a notificação e a marca como lida."""
+    template_name = 'swgfApp/ler_notificacao.html'
+    context_object_name = 'notificacao'
 
-    Mesa.objects.create(numero=proximo_numero, status='disponivel')
-    return redirect('swgfApp:mesas')
+    def get_queryset(self):
+        # Filtrar pelo usuário impede abrir a notificação de outra pessoa.
+        return Notificacao.objects.filter(usuario=self.request.user)
 
-@login_required
-def editar_mesa(request, mesa_id):
-    """Edita o número de uma mesa."""
-    mesa = get_object_or_404(Mesa, id=mesa_id)
+    def get_object(self, queryset=None):
+        notificacao = super().get_object(queryset)
+        notificacao.marcar_como_lida()
+        return notificacao
 
-    if request.method == 'POST':
-        novo_numero = request.POST.get('numero')
-        if novo_numero:
-            mesa.numero = novo_numero
-            mesa.save()
+
+# =============================================================================
+# Gestão de mesas (nível ADMIN)
+# =============================================================================
+
+class MesaListView(AdministradorMixin, FiltroMixin, ListView):
+    """Lista as mesas com status, ocupante e filtros."""
+    queryset = Mesa.objects.com_ocupacao()
+    template_name = 'swgfApp/mesas.html'
+    context_object_name = 'mesas'
+    filtro_form_class = FiltroMesaForm
+
+
+class CriarMesaView(AdministradorMixin, ApenasPostMixin, View):
+    """Cria uma mesa com o próximo número livre."""
+
+    def post(self, request):
+        ultima = Mesa.objects.order_by('-numero').first()
+        numero = ultima.numero + 1 if ultima else 1
+        Mesa.objects.create(numero=numero)
+        messages.success(request, f"Mesa {numero} criada.")
         return redirect('swgfApp:mesas')
 
-    return render(request, 'swgfApp/editar_mesa.html', {'mesa': mesa})
+
+class MesaUpdateView(AdministradorMixin, UpdateView):
+    """Edita o número da mesa."""
+    model = Mesa
+    form_class = MesaForm
+    template_name = 'swgfApp/editar_mesa.html'
+    context_object_name = 'mesa'
+    success_url = reverse_lazy('swgfApp:mesas')
 
 
-@login_required
-def deletar_mesa(request, mesa_id):
-    """Deleta uma mesa (os tickets perdem a referência, mas não são deletados)."""
-    mesa = get_object_or_404(Mesa, id=mesa_id)
-    mesa.delete()
-    return redirect('swgfApp:mesas')
+class AlternarMesaView(AdministradorMixin, ApenasPostMixin, View):
+    """Ativa ou desativa a mesa, respeitando a regra de Mesa.alternar_status."""
+
+    def post(self, request, pk):
+        mesa = get_object_or_404(Mesa, pk=pk)
+        try:
+            mesa.alternar_status()
+        except RegraDeNegocioError as erro:
+            messages.error(request, str(erro))
+        return redirect('swgfApp:mesas')
 
 
-@login_required
-def editar_senha(request, senha_id):
-    """
-    Permite editar o status da senha e os dados do cliente associado.
-    """
-    senha = get_object_or_404(Senha, id=senha_id)
-    ticket = Ticket.objects.filter(senha=senha).first()
+class LiberarMesaView(AdministradorMixin, ApenasPostMixin, View):
+    """Tira o ocupante da mesa, para quando alguém saiu sem fazer logout."""
 
-    if request.method == 'POST':
-        # Atualiza o status da senha
-        novo_status = request.POST.get('status')
-        if novo_status:
-            senha.status = novo_status
-            senha.save()
-
-        # Atualiza os dados do cliente (se houver ticket com cliente)
-        if ticket and ticket.cliente:
-            cliente = ticket.cliente
-            cliente.nome = request.POST.get('nome', cliente.nome)
-            cliente.tipo_prioridade = request.POST.get('tipo_prioridade', cliente.tipo_prioridade)
-            cliente.save()
-
-        return redirect('swgfApp:fila')
-
-    context = {
-        'senha': senha,
-        'ticket': ticket,
-        'cliente': ticket.cliente if ticket else None,
-    }
-    return render(request, 'swgfApp/editar_senha.html', context)
+    def post(self, request, pk):
+        mesa = get_object_or_404(Mesa, pk=pk)
+        mesa.liberar()
+        messages.success(request, f"Mesa {mesa.numero} liberada.")
+        return redirect('swgfApp:mesas')
 
 
-@login_required
-def deletar_senha(request, senha_id):
-    """
-    Deleta a senha e o ticket associado. O cliente permanece no banco.
-    """
-    senha = get_object_or_404(Senha, id=senha_id)
-    senha.delete()  # O ticket é deletado em cascata (não configuramos SET_NULL aqui, é CASCADE por padrão)
-    return redirect('swgfApp:fila')
+class MesaDeleteView(AdministradorMixin, ApenasPostMixin, MensagemSucessoDeleteMixin, DeleteView):
+    """Deleta a mesa, exceto se estiver em uso. Os tickets perdem apenas a referência."""
+    model = Mesa
+    success_url = reverse_lazy('swgfApp:mesas')
+    mensagem_sucesso = "Mesa deletada."
+
+    def form_valid(self, form):
+        if self.object.sessao_aberta:
+            messages.error(self.request, "Não é possível deletar uma mesa em uso. Libere-a antes.")
+            return redirect('swgfApp:mesas')
+        return super().form_valid(form)
 
 
-@login_required
-@somente_adm
-def mensagens(request):
-    """Lista todas as mensagens enviadas pelo ADM."""
-    lista_mensagens = Mensagem.objects.all().order_by('-id')
-    return render(request, 'swgfApp/mensagens.html', {'mensagens': lista_mensagens})
+# =============================================================================
+# Gestão de senhas (nível ADMIN)
+# =============================================================================
+
+class SenhaUpdateView(AdministradorMixin, UpdateView):
+    """Edita o status da senha e os dados do cliente (ver SenhaForm)."""
+    model = Senha
+    form_class = SenhaForm
+    template_name = 'swgfApp/editar_senha.html'
+    context_object_name = 'senha'
+    success_url = reverse_lazy('swgfApp:fila')
 
 
-@login_required
-@somente_adm
-def criar_mensagem(request):
-    """
-    Cria uma nova mensagem e gera notificações para todos os atendentes (não-ADMs).
-    """
-    if request.method == 'POST':
-        conteudo = request.POST.get('conteudo')
-        if conteudo:
-            mensagem = Mensagem.objects.create(
-                usuario=request.user,
-                status='enviada',
-                conteudo=conteudo,
-            )
-
-            # Gera uma notificação para cada atendente (is_adm=False)
-            atendentes = Usuario.objects.filter(is_adm=False, is_active=True)
-            for atendente in atendentes:
-                Notificacao.objects.create(
-                    usuario=atendente,
-                    mensagem=mensagem,
-                    visualizada=False,
-                )
-
-            return redirect('swgfApp:mensagens')
-
-    return render(request, 'swgfApp/criar_mensagem.html')
+class SenhaDeleteView(AdministradorMixin, ApenasPostMixin, MensagemSucessoDeleteMixin, DeleteView):
+    """Deleta a senha e, em cascata (1:1), o ticket. O cliente permanece no banco."""
+    model = Senha
+    success_url = reverse_lazy('swgfApp:fila')
+    mensagem_sucesso = "Senha deletada."
 
 
-@login_required
-@somente_adm
-def editar_mensagem(request, mensagem_id):
-    """Edita o conteúdo de uma mensagem existente."""
-    mensagem = get_object_or_404(Mensagem, id=mensagem_id)
+# =============================================================================
+# Mensagens (nível ADMIN)
+# =============================================================================
 
-    if request.method == 'POST':
-        conteudo = request.POST.get('conteudo')
-        if conteudo:
-            mensagem.conteudo = conteudo
-            mensagem.save()
-        return redirect('swgfApp:mensagens')
-
-    return render(request, 'swgfApp/editar_mensagem.html', {'mensagem': mensagem})
+class MensagemListView(AdministradorMixin, FiltroMixin, ListView):
+    model = Mensagem
+    template_name = 'swgfApp/mensagens.html'
+    context_object_name = 'mensagens'
+    filtro_form_class = FiltroMensagemForm
+    ordering = ['-id']
 
 
-@login_required
-@somente_adm
-def deletar_mensagem(request, mensagem_id):
-    """Deleta uma mensagem (e as notificações associadas em cascata)."""
-    mensagem = get_object_or_404(Mensagem, id=mensagem_id)
-    mensagem.delete()
-    return redirect('swgfApp:mensagens')
+class MensagemCreateView(AdministradorMixin, CreateView):
+    """Cria a mensagem e notifica cada atendente ativo."""
+    model = Mensagem
+    form_class = MensagemForm
+    template_name = 'swgfApp/criar_mensagem.html'
+    success_url = reverse_lazy('swgfApp:mensagens')
+
+    def form_valid(self, form):
+        form.instance.usuario = self.request.user  # o remetente é quem está logado
+        resposta = super().form_valid(form)
+        notificar_atendentes(mensagem=self.object)
+        return resposta
 
 
-# ============ NOTAS ============
-
-@login_required
-@somente_adm
-def notas(request):
-    """Lista todas as notas do ADM."""
-    lista_notas = Nota.objects.all().order_by('-id')
-    return render(request, 'swgfApp/notas.html', {'notas': lista_notas})
+class MensagemUpdateView(AdministradorMixin, UpdateView):
+    model = Mensagem
+    form_class = MensagemForm
+    template_name = 'swgfApp/editar_mensagem.html'
+    context_object_name = 'mensagem'
+    success_url = reverse_lazy('swgfApp:mensagens')
 
 
-@login_required
-@somente_adm
-def criar_nota(request):
-    if request.method == 'POST':
-        conteudo = request.POST.get('conteudo')
-        if conteudo:
-            Nota.objects.create(usuario=request.user, conteudo=conteudo)
-        return redirect('swgfApp:notas')
-    return render(request, 'swgfApp/criar_nota.html')
+class MensagemDeleteView(AdministradorMixin, ApenasPostMixin, MensagemSucessoDeleteMixin, DeleteView):
+    """Deleta a mensagem e, em cascata, as notificações ligadas a ela."""
+    model = Mensagem
+    success_url = reverse_lazy('swgfApp:mensagens')
+    mensagem_sucesso = "Mensagem deletada."
 
 
-@login_required
-@somente_adm
-def editar_nota(request, nota_id):
-    nota = get_object_or_404(Nota, id=nota_id)
-    if request.method == 'POST':
-        conteudo = request.POST.get('conteudo')
-        if conteudo:
-            nota.conteudo = conteudo
-            nota.save()
-        return redirect('swgfApp:notas')
-    return render(request, 'swgfApp/editar_nota.html', {'nota': nota})
+# =============================================================================
+# Notas (nível ADMIN)
+# =============================================================================
+
+class NotaListView(AdministradorMixin, FiltroMixin, ListView):
+    model = Nota
+    template_name = 'swgfApp/notas.html'
+    context_object_name = 'notas'
+    filtro_form_class = FiltroNotaForm
+    ordering = ['-id']
 
 
-@login_required
-@somente_adm
-def deletar_nota(request, nota_id):
-    nota = get_object_or_404(Nota, id=nota_id)
-    nota.delete()
-    return redirect('swgfApp:notas')
+class NotaCreateView(AdministradorMixin, CreateView):
+    model = Nota
+    form_class = NotaForm
+    template_name = 'swgfApp/criar_nota.html'
+    success_url = reverse_lazy('swgfApp:notas')
+
+    def form_valid(self, form):
+        form.instance.usuario = self.request.user  # o autor é quem está logado
+        return super().form_valid(form)
 
 
-# DATAS 
-
-@login_required
-@somente_adm
-def datas(request):
-    """Lista todas as datas/feriados cadastrados."""
-    lista_datas = Data.objects.all().order_by('-dia')
-    return render(request, 'swgfApp/datas.html', {'datas': lista_datas})
+class NotaUpdateView(AdministradorMixin, UpdateView):
+    model = Nota
+    form_class = NotaForm
+    template_name = 'swgfApp/editar_nota.html'
+    context_object_name = 'nota'
+    success_url = reverse_lazy('swgfApp:notas')
 
 
-@login_required
-@somente_adm
-def criar_data(request):
-    if request.method == 'POST':
-        dia = request.POST.get('dia')
-        feriado = request.POST.get('feriado')
-        if dia:
-            Data.objects.create(
-                usuario=request.user,
-                dia=dia,
-                feriado=feriado or None,
-                status='ativo',
-            )
-        return redirect('swgfApp:datas')
-    return render(request, 'swgfApp/criar_data.html')
+class NotaDeleteView(AdministradorMixin, ApenasPostMixin, MensagemSucessoDeleteMixin, DeleteView):
+    model = Nota
+    success_url = reverse_lazy('swgfApp:notas')
+    mensagem_sucesso = "Nota deletada."
 
 
-@login_required
-@somente_adm
-def editar_data(request, data_id):
-    registro = get_object_or_404(Data, id=data_id)
-    if request.method == 'POST':
-        registro.dia = request.POST.get('dia', registro.dia)
-        registro.feriado = request.POST.get('feriado') or None
-        registro.status = request.POST.get('status', registro.status)
-        registro.save()
-        return redirect('swgfApp:datas')
-    return render(request, 'swgfApp/editar_data.html', {'registro': registro})
+# =============================================================================
+# Datas e feriados (nível ADMIN)
+# =============================================================================
+
+class DataListView(AdministradorMixin, FiltroMixin, ListView):
+    model = Data
+    template_name = 'swgfApp/datas.html'
+    context_object_name = 'datas'
+    filtro_form_class = FiltroDataForm
+    ordering = ['-dia']
 
 
-@login_required
-@somente_adm
-def deletar_data(request, data_id):
-    registro = get_object_or_404(Data, id=data_id)
-    registro.delete()
-    return redirect('swgfApp:datas')
+class DataCreateView(AdministradorMixin, CreateView):
+    """Cadastra a data e notifica os atendentes (antes ninguém era avisado)."""
+    model = Data
+    form_class = DataForm
+    template_name = 'swgfApp/criar_data.html'
+    success_url = reverse_lazy('swgfApp:datas')
+
+    def form_valid(self, form):
+        form.instance.usuario = self.request.user
+        resposta = super().form_valid(form)
+        notificar_atendentes(data=self.object)
+        return resposta
 
 
-@login_required
-def notificacoes(request):
-    """Lista todas as notificações do usuário logado."""
-    lista = Notificacao.objects.filter(usuario=request.user).order_by('-id')
-    return render(request, 'swgfApp/notificacoes.html', {'notificacoes': lista})
+class DataUpdateView(AdministradorMixin, UpdateView):
+    model = Data
+    form_class = DataForm
+    template_name = 'swgfApp/editar_data.html'
+    context_object_name = 'registro'
+    success_url = reverse_lazy('swgfApp:datas')
 
 
-@login_required
-def ler_notificacao(request, notificacao_id):
-    """
-    Marca uma notificação como visualizada e mostra o conteúdo.
-    """
-    notificacao = get_object_or_404(Notificacao, id=notificacao_id, usuario=request.user)
-    notificacao.visualizada = True
-    notificacao.save()
-
-    return render(request, 'swgfApp/ler_notificacao.html', {'notificacao': notificacao})
-
-
-@login_required
-def historico(request):
-    """
-    Lista os tickets que foram atendidos, com filtro por data.
-    Parâmetro GET 'filtro': 'hoje' (padrão) ou 'todos'.
-    """
-    filtro = request.GET.get('filtro', 'hoje')
-
-    # Pega todos os tickets que têm hora_atendimento preenchida (foram chamados)
-    tickets = Ticket.objects.filter(hora_atendimento__isnull=False).order_by('-id')
-
-    if filtro == 'hoje':
-        hoje = timezone.now().date()
-        tickets = tickets.filter(data=hoje)
-
-    context = {
-        'tickets': tickets,
-        'filtro': filtro,
-    }
-    return render(request, 'swgfApp/historico.html', context)
-
-
-@login_required
-def trocar_mesa(request, mesa_id):
-    """
-    Encerra a sessão ativa do usuário (se houver) e cria uma nova
-    com a mesa escolhida.
-    """
-    mesa = get_object_or_404(Mesa, id=mesa_id)
-
-    # Encerra qualquer sessão ativa do usuário
-    SessaoMesa.objects.filter(usuario=request.user, data_fim__isnull=True).update(
-        data_fim=timezone.now()
-    )
-
-    # Cria uma nova sessão com a mesa escolhida
-    SessaoMesa.objects.create(usuario=request.user, mesa=mesa)
-
-    return redirect('swgfApp:fila')
+class DataDeleteView(AdministradorMixin, ApenasPostMixin, MensagemSucessoDeleteMixin, DeleteView):
+    model = Data
+    success_url = reverse_lazy('swgfApp:datas')
+    mensagem_sucesso = "Data deletada."

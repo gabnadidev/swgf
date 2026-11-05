@@ -1,19 +1,20 @@
 {% extends 'swgfApp/base.html' %}
+{# Totem público. Em feriado ativo, o formulário dá lugar a um aviso. #}
 
 {% block titulo %}Totem — SWGF{% endblock %}
 {% block titulo_pagina %}Retirar Senha{% endblock %}
 
 {% block conteudo %}
 <div class="card" style="max-width: 500px; margin: 0 auto;">
+    {% if feriado %}
+    <h2 style="text-align: center;">Sem atendimento hoje</h2>
+    <p style="text-align: center; color: #666; margin-top: 10px;">Feriado: {{ feriado.feriado }}</p>
+    {% else %}
     <form method="post">
         {% csrf_token %}
-        <label for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
-        {{ form.nome }}
-
-        <label for="{{ form.tipo_prioridade.id_for_label }}">{{ form.tipo_prioridade.label }}</label>
-        {{ form.tipo_prioridade }}
-
+        {% include 'swgfApp/_campos_form.html' %}
         <button type="submit" class="btn btn-primario" style="width: 100%; margin-top: 15px;">IMPRIMIR</button>
     </form>
+    {% endif %}
 </div>
 {% endblock %}

@@ -1,18 +1,21 @@
+"""
+Configuração do painel /admin/ do Django, para cada modelo do sistema:
+    list_display  -> colunas da listagem
+    list_filter   -> filtros da barra lateral
+    search_fields -> campos pesquisados pela caixa de busca
+"""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+
 from .models import (
-    Usuario, Cliente, Senha, Mesa,
-    SessaoMesa, Ticket, Mensagem, Data,
-    Notificacao, Nota
+    Cliente, Data, Mensagem, Mesa, Nota, Notificacao, Senha, SessaoMesa, Ticket, Usuario,
 )
 
 
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
-    """
-    Configuração do Admin para o CustomUser.
-    Herda do UserAdmin padrão e adiciona os campos customizados.
-    """
+    """Herda o admin padrão de usuários e acrescenta os campos do SWGF."""
     list_display = ('username', 'email', 'first_name', 'is_adm', 'status', 'is_active')
     list_filter = ('is_adm', 'status', 'is_active')
     fieldsets = UserAdmin.fieldsets + (
@@ -75,5 +78,3 @@ class NotificacaoAdmin(admin.ModelAdmin):
 @admin.register(Nota)
 class NotaAdmin(admin.ModelAdmin):
     list_display = ('id', 'usuario', 'conteudo')
-
-

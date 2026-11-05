@@ -1,4 +1,5 @@
 {% extends 'swgfApp/base.html' %}
+{# Página inicial pública com os atalhos do sistema. #}
 
 {% block titulo %}Início — SWGF{% endblock %}
 {% block titulo_pagina %}Início{% endblock %}
@@ -8,7 +9,7 @@
     <h2>Bem-vindo ao SWGF</h2>
     <p style="margin-top: 10px;">Sistema de Gestão de Filas e Atendimento</p>
 
-    <div style="display: flex; gap: 15px; margin-top: 25px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 25px;">
         <a href="{% url 'swgfApp:totem' %}" class="btn btn-primario">🎫 Totem (Retirar Senha)</a>
         <a href="{% url 'swgfApp:painel_tv' %}" class="btn btn-secundario" target="_blank">📺 Painel TV</a>
         {% if user.is_authenticated %}

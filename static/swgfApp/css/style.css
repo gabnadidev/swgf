@@ -1,0 +1,438 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+}
+
+/* Layout principal */
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: #ffffff;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 0;
+}
+
+.sidebar-logo {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 8px;
+    color: #333;
+    padding: 10px 0 20px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.sidebar-menu {
+    list-style: none;
+    flex: 1;
+}
+
+.sidebar-menu li {
+    margin: 5px 15px;
+}
+
+.sidebar-menu a {
+    display: block;
+    padding: 12px 15px;
+    text-decoration: none;
+    color: #333;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.sidebar-menu a:hover {
+    background: #f0f0f0;
+}
+
+.sidebar-menu a.ativo {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+/* O logout é um botão de formulário, por isso limpa o visual padrão de botão. */
+.sidebar-sair {
+    margin: 0 15px;
+    padding: 12px 15px;
+    width: calc(100% - 30px);
+    color: #d32f2f;
+    background: none;
+    border: none;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+}
+
+.sidebar-sair:hover {
+    background: #ffeeee;
+}
+
+/* Área de conteúdo */
+.conteudo {
+    flex: 1;
+    padding: 30px 40px;
+}
+
+.topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.topo h1 {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.topo .usuario-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 14px;
+    color: #666;
+}
+
+.sino {
+    font-size: 22px;
+    cursor: pointer;
+    background: #fff;
+    padding: 8px 12px;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    position: relative;
+}
+
+/* Bolinha vermelha com o número de notificações não lidas */
+.sino-contador {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #d32f2f;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 7px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Cards genéricos */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    margin-bottom: 20px;
+}
+
+/* Tabelas */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table thead th {
+    text-align: left;
+    padding: 12px;
+    font-weight: bold;
+    border-bottom: 2px solid #eee;
+}
+
+table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Botões */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primario {
+    background: #2c2cdc;
+    color: white;
+}
+
+.btn-primario:hover {
+    background: #1a1a9c;
+}
+
+.btn-secundario {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-secundario:hover {
+    background: #cacaca;
+}
+
+.btn-perigo {
+    background: #d32f2f;
+    color: white;
+}
+
+.btn-perigo:hover {
+    background: #a02020;
+}
+
+.btn-pequeno {
+    padding: 6px 15px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Formulários */
+form input,
+form select,
+form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+/* Formulário de um botão só, que fica na mesma linha dos outros elementos */
+.form-linha {
+    display: inline-block;
+}
+
+.botoes-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.erro-form {
+    color: #d32f2f;
+    font-size: 13px;
+    margin: -8px 0 12px 0;
+}
+
+.ajuda-form {
+    display: block;
+    color: #999;
+    margin: -10px 0 12px 0;
+}
+
+/* Barra de filtros */
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.filtro-campo {
+    flex: 1 1 150px;
+}
+
+.filtro-campo input,
+.filtro-campo select {
+    margin-bottom: 0;
+}
+
+.filtro-campo .erro-form {
+    margin: 4px 0 0 0;
+}
+
+.filtros-erro {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+.filtro-acoes {
+    display: flex;
+    gap: 8px;
+}
+
+/* Avisos enviados pelas views (messages) */
+.aviso {
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.aviso-success {
+    background: #e8f5e9;
+    color: #1b5e20;
+}
+
+.aviso-error {
+    background: #ffebee;
+    color: #b71c1c;
+}
+
+.aviso-info {
+    background: #e8eaf6;
+    color: #1a237e;
+}
+
+/* Tela da fila */
+.barra-mesa,
+.barra-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+}
+
+.barra-acoes {
+    justify-content: center;
+}
+
+.colunas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.colunas .card {
+    flex: 1 1 320px;
+}
+
+.lista-senhas {
+    list-style: none;
+}
+
+.lista-senhas li {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.lista-senhas .lista-vazia {
+    justify-content: center;
+    color: #999;
+    padding: 20px;
+}
+
+.lista-acoes {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.selo-prioridade {
+    background: #fff3e0;
+    color: #bf5f00;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+.status-chamada {
+    color: #2c2cdc;
+    font-weight: bold;
+}
+
+.status-atendida {
+    color: #999;
+}
+
+/* Ações com ícone nas listas */
+.link-icone,
+.botao-icone {
+    text-decoration: none;
+    font-size: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+/* Listas e tabelas */
+.cabecalho-lista {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.grade-mesas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.tabela-rolavel {
+    overflow-x: auto;
+}
+
+.paginacao {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.notificacao-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.notificacao-item.nao-lida {
+    background: #f0f4ff;
+    border-left: 4px solid #2c2cdc;
+}
